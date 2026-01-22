@@ -2,13 +2,6 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import json
-import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
-import numpy as np
-import io
-import base64
-import os
-import platform
 
 # 設定頁面配置
 st.set_page_config(
@@ -16,62 +9,6 @@ st.set_page_config(
     page_icon="📝",
     layout="wide"
 )
-
-# 中文字型設定函數
-def setup_chinese_font():
-    """設定 matplotlib 的中文字型"""
-    try:
-        # 嘗試使用系統內建的中文字型
-        system = platform.system()
-        
-        if system == "Darwin":  # macOS
-            # macOS 常見中文字型
-            font_candidates = [
-                "PingFang TC",
-                "Heiti TC",
-                "STHeiti",
-                "Arial Unicode MS"
-            ]
-        elif system == "Windows":
-            font_candidates = [
-                "Microsoft JhengHei",
-                "Microsoft YaHei",
-                "SimHei",
-                "KaiTi"
-            ]
-        else:  # Linux
-            font_candidates = [
-                "WenQuanYi Micro Hei",
-                "WenQuanYi Zen Hei",
-                "Noto Sans CJK TC",
-                "Droid Sans Fallback"
-            ]
-        
-        # 嘗試設定字型
-        for font_name in font_candidates:
-            try:
-                plt.rcParams['font.sans-serif'] = [font_name]
-                plt.rcParams['axes.unicode_minus'] = False
-                # 測試字型是否可用
-                fig, ax = plt.subplots(figsize=(1, 1))
-                ax.text(0.5, 0.5, "測試", fontsize=10)
-                plt.close(fig)
-                return True
-            except:
-                continue
-        
-        # 如果都失敗，使用預設設定
-        plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
-        plt.rcParams['axes.unicode_minus'] = False
-        return False
-    except Exception as e:
-        st.warning(f"字型設定警告: {e}")
-        plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
-        plt.rcParams['axes.unicode_minus'] = False
-        return False
-
-# 初始化中文字型
-setup_chinese_font()
 
 # 年級評分標準設定
 GRADE_CRITERIA = {
@@ -294,8 +231,8 @@ def analyze_essay(api_key, images, grade_level):
                    "3. 嘗試更新 google-generativeai 套件：`pip install --upgrade google-generativeai`")
         return None
 
-def create_score_card(result, grade_level):
-    """生成評分圖卡"""
+def create_score_summary(result, grade_level):
+    """生成評分摘要（文字描述）"""
     try:
         scores = result['scores']
         total_score = result['total_score']
@@ -305,56 +242,32 @@ def create_score_card(result, grade_level):
         dimensions = list(scores.keys())
         values = list(scores.values())
         
-        # 創建圖表
-        fig = plt.figure(figsize=(12, 8))
-        gs = fig.add_gridspec(2, 1, height_ratios=[2, 1], hspace=0.3)
+        # 生成文字描述
+        summary_text = f"# {grade_level} 作文評分摘要\n\n"
+        summary_text += f"## 總分：{total_score} 分\n\n"
+        summary_text += "## 各面向得分：\n\n"
         
-        # 上半部分：雷達圖
-        ax1 = fig.add_subplot(gs[0], projection='polar')
-        
-        # 計算角度
-        angles = np.linspace(0, 2 * np.pi, len(dimensions), endpoint=False).tolist()
-        angles += angles[:1]  # 閉合
-        
-        values_plot = values + values[:1]  # 閉合
-        
-        # 繪製雷達圖
-        ax1.plot(angles, values_plot, 'o-', linewidth=2, color='#4A90E2', label='評分')
-        ax1.fill(angles, values_plot, alpha=0.25, color='#4A90E2')
-        ax1.set_xticks(angles[:-1])
-        ax1.set_xticklabels(dimensions, fontsize=11)
-        ax1.set_ylim(0, 100)
-        ax1.set_yticks([20, 40, 60, 80, 100])
-        ax1.set_yticklabels(['20', '40', '60', '80', '100'], fontsize=9)
-        ax1.grid(True, linestyle='--', alpha=0.5)
-        ax1.set_title(f'作文評分雷達圖 - 總分：{total_score} 分', fontsize=16, fontweight='bold', pad=20)
-        
-        # 下半部分：文字資訊
-        ax2 = fig.add_subplot(gs[1])
-        ax2.axis('off')
-        
-        # 顯示各項分數
-        score_text = "各項評分：\n"
         for dim, val in zip(dimensions, values):
-            score_text += f"  • {dim}：{val} 分\n"
+            # 根據分數給出等級描述
+            if val >= 90:
+                level = "優秀"
+            elif val >= 80:
+                level = "良好"
+            elif val >= 70:
+                level = "尚可"
+            elif val >= 60:
+                level = "待改進"
+            else:
+                level = "需加強"
+            
+            summary_text += f"- **{dim}**：{val} 分（{level}）\n"
         
-        info_text = f"{score_text}\n簡短評語：\n{comment_summary}"
-        ax2.text(0.05, 0.95, info_text, transform=ax2.transAxes, 
-                fontsize=12, verticalalignment='top', 
-                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.3))
+        summary_text += f"\n## 簡短評語\n\n{comment_summary}\n"
         
-        plt.suptitle(f'{grade_level} 作文評分圖卡', fontsize=18, fontweight='bold', y=0.98)
-        
-        # 轉換為圖片
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
-        buf.seek(0)
-        plt.close()
-        
-        return buf
+        return summary_text
         
     except Exception as e:
-        st.error(f"生成評分圖卡時發生錯誤：{e}")
+        st.error(f"生成評分摘要時發生錯誤：{e}")
         return None
 
 # 主程式
@@ -448,24 +361,22 @@ def main():
         st.subheader("💬 AI 評語與建議")
         st.markdown(result.get('detailed_review', ''))
         
-        # 生成並顯示評分圖卡
+        # 生成並顯示評分摘要
         st.markdown("---")
-        st.subheader("📈 評分圖卡")
+        st.subheader("📈 評分摘要")
         
-        score_card = create_score_card(result, grade_level)
+        score_summary = create_score_summary(result, grade_level)
         
-        if score_card:
-            # 顯示圖卡
-            score_card.seek(0)
-            st.image(score_card, use_container_width=True)
+        if score_summary:
+            # 顯示評分摘要
+            st.markdown(score_summary)
             
-            # 下載按鈕
-            score_card.seek(0)
+            # 下載按鈕（Markdown 格式）
             st.download_button(
-                label="⬇️ 下載評分圖卡 (PNG)",
-                data=score_card,
-                file_name=f"作文評分圖卡_{grade_level.replace(' ', '_')}.png",
-                mime="image/png",
+                label="⬇️ 下載評分摘要 (Markdown)",
+                data=score_summary,
+                file_name=f"作文評分摘要_{grade_level.replace(' ', '_')}.md",
+                mime="text/markdown",
                 use_container_width=True
             )
 
