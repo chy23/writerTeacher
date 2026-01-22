@@ -136,6 +136,22 @@ GRADE_CRITERIA = {
     }
 }
 
+def generate_ocr_prompt():
+    """生成 OCR 辨識專用的提示詞"""
+    return """
+你是一位專業的 OCR 文字辨識專家，專門辨識手寫中文作文。
+
+【OCR 辨識要求】
+1. **準確性第一**：請仔細辨識圖片中的每一個字，不要猜測或自行修改文字。
+2. **逐字辨識**：從左到右、從上到下，逐字逐句辨識，確保不遺漏任何文字。
+3. **保留格式**：保留原文的段落結構和換行，使用 \\n 表示換行。
+4. **標點符號**：準確辨識標點符號，包括句號、逗號、問號、驚嘆號等。
+5. **錯字保留**：如果學生寫錯字，請保留錯字原樣，不要自行修正。
+6. **不確定處理**：如果某個字無法確定，請標記為 [無法辨識] 或 [模糊不清]，不要亂猜。
+
+請只回傳辨識出的文字內容，不要添加任何說明或註解。直接輸出文字即可。
+"""
+
 def generate_system_prompt(grade_level):
     """根據年級生成系統提示詞"""
     criteria = GRADE_CRITERIA[grade_level]
@@ -145,12 +161,10 @@ def generate_system_prompt(grade_level):
 {criteria['prompt']}
 
 【重要要求】
-1. 請先進行 OCR 辨識，將圖片中的作文文字完整提取出來。
-2. 請依據上述評分標準，對這篇作文進行詳細批改。
-3. 請以 JSON 格式回傳結果，格式如下：
+1. 請依據上述評分標準，對這篇作文進行詳細批改。
+2. 請以 JSON 格式回傳結果，格式如下：
 
 {{
-  "full_text": "辨識出的作文全文（保留段落格式）",
   "scores": {{
     "{criteria['dimensions'][0]}": 85,
     "{criteria['dimensions'][1] if len(criteria['dimensions']) > 1 else '其他'}": 90,
@@ -186,10 +200,10 @@ def analyze_essay(api_key, images, grade_level):
                 st.error("❌ 沒有找到支援 generateContent 的模型")
                 return None
             
-            # 優先選擇 flash 模型（較快且便宜），否則使用第一個可用模型
-            preferred_models = ['gemini-1.5-flash-latest', 'gemini-1.5-flash-002', 
-                               'gemini-1.5-flash', 'gemini-1.5-pro-latest', 
-                               'gemini-1.5-pro', 'gemini-pro']
+            # 優先選擇 Pro 模型（OCR 更準確），否則使用 flash 模型
+            preferred_models = ['gemini-1.5-pro-latest', 'gemini-1.5-pro', 
+                               'gemini-1.5-flash-latest', 'gemini-1.5-flash-002', 
+                               'gemini-1.5-flash', 'gemini-pro']
             
             selected_model = None
             for preferred in preferred_models:
@@ -203,14 +217,14 @@ def analyze_essay(api_key, images, grade_level):
             model = genai.GenerativeModel(selected_model)
             
         except Exception as e:
-            # 如果列出模型失敗，嘗試使用常見的模型名稱
+            # 如果列出模型失敗，嘗試使用常見的模型名稱（優先 Pro 模型）
             st.warning(f"無法列出可用模型，嘗試使用預設模型：{e}")
             model_names = [
+                'gemini-1.5-pro-latest',
+                'gemini-1.5-pro',
                 'gemini-1.5-flash-latest',
                 'gemini-1.5-flash-002',
-                'gemini-1.5-flash',
-                'gemini-1.5-pro-latest',
-                'gemini-1.5-pro'
+                'gemini-1.5-flash'
             ]
             
             model = None
@@ -225,19 +239,32 @@ def analyze_essay(api_key, images, grade_level):
                 st.error("❌ 無法找到可用的模型。請檢查 API Key 是否正確且有權限。")
                 return None
         
+        # 第一階段：OCR 文字辨識
+        ocr_prompt = generate_ocr_prompt()
+        ocr_content = [ocr_prompt] + images
+        
+        with st.spinner("正在辨識文字..."):
+            ocr_response = model.generate_content(ocr_content)
+            full_text = ocr_response.text.strip()
+        
+        # 第二階段：批改作文
         system_prompt = generate_system_prompt(grade_level)
         
-        # 構建提示詞
-        prompt = f"{system_prompt}\n\n請批改以下作文圖片："
+        # 構建批改提示詞，包含辨識出的文字
+        review_prompt = f"""{system_prompt}
+
+以下是 OCR 辨識出的作文全文：
+
+{full_text}
+
+請依據上述評分標準，對這篇作文進行詳細批改。"""
         
-        # 準備內容：提示詞 + 圖片（Gemini API 可以直接接受 PIL Image 對象）
-        content = [prompt] + images
-        
-        # 調用 API
-        response = model.generate_content(content)
+        # 調用 API 進行批改
+        with st.spinner("正在批改作文..."):
+            review_response = model.generate_content(review_prompt)
         
         # 解析回應
-        response_text = response.text.strip()
+        response_text = review_response.text.strip()
         
         # 嘗試提取 JSON（可能回應中有其他文字）
         json_start = response_text.find('{')
@@ -248,6 +275,9 @@ def analyze_essay(api_key, images, grade_level):
         
         json_str = response_text[json_start:json_end]
         result = json.loads(json_str)
+        
+        # 將 OCR 辨識的文字加入結果
+        result['full_text'] = full_text
         
         return result
         
