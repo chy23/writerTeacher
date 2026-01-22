@@ -173,7 +173,57 @@ def analyze_essay(api_key, images, grade_level):
     """使用 Gemini API 分析作文"""
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # 先列出可用模型，選擇支援 generateContent 的模型
+        try:
+            available_models = []
+            for m in genai.list_models():
+                if 'generateContent' in m.supported_generation_methods:
+                    model_name = m.name.split('/')[-1]  # 提取模型名稱（去掉 models/ 前綴）
+                    available_models.append(model_name)
+            
+            if not available_models:
+                st.error("❌ 沒有找到支援 generateContent 的模型")
+                return None
+            
+            # 優先選擇 flash 模型（較快且便宜），否則使用第一個可用模型
+            preferred_models = ['gemini-1.5-flash-latest', 'gemini-1.5-flash-002', 
+                               'gemini-1.5-flash', 'gemini-1.5-pro-latest', 
+                               'gemini-1.5-pro', 'gemini-pro']
+            
+            selected_model = None
+            for preferred in preferred_models:
+                if preferred in available_models:
+                    selected_model = preferred
+                    break
+            
+            if not selected_model:
+                selected_model = available_models[0]
+            
+            model = genai.GenerativeModel(selected_model)
+            
+        except Exception as e:
+            # 如果列出模型失敗，嘗試使用常見的模型名稱
+            st.warning(f"無法列出可用模型，嘗試使用預設模型：{e}")
+            model_names = [
+                'gemini-1.5-flash-latest',
+                'gemini-1.5-flash-002',
+                'gemini-1.5-flash',
+                'gemini-1.5-pro-latest',
+                'gemini-1.5-pro'
+            ]
+            
+            model = None
+            for model_name in model_names:
+                try:
+                    model = genai.GenerativeModel(model_name)
+                    break
+                except:
+                    continue
+            
+            if model is None:
+                st.error("❌ 無法找到可用的模型。請檢查 API Key 是否正確且有權限。")
+                return None
         
         system_prompt = generate_system_prompt(grade_level)
         
@@ -206,6 +256,12 @@ def analyze_essay(api_key, images, grade_level):
         return None
     except Exception as e:
         st.error(f"API 調用錯誤：{e}")
+        # 提供更詳細的錯誤訊息
+        if "404" in str(e) or "not found" in str(e).lower():
+            st.info("💡 提示：如果持續出現此錯誤，請檢查：\n"
+                   "1. API Key 是否正確且有權限\n"
+                   "2. 模型是否在您的地區可用\n"
+                   "3. 嘗試更新 google-generativeai 套件：`pip install --upgrade google-generativeai`")
         return None
 
 def create_score_card(result, grade_level):
