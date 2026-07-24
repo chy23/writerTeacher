@@ -665,6 +665,17 @@ const ImageViewer = ({ src, onClose }) => {
 
 // --- 5. 主程式 (Main App) ---
 
+const generateMedalSVG = (c1, c2, label) => `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g${label}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient><filter id="s"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.3"/></filter></defs><circle cx="50" cy="50" r="42" fill="url(%23g${label})" stroke="%23ffffff" stroke-width="3" filter="url(%23s)"/><text x="50" y="56" font-size="24" font-family="sans-serif" font-weight="bold" fill="white" text-anchor="middle">${label}</text></svg>`;
+
+const DEFAULT_MEDALS = {
+  grand: generateMedalSVG('%238b5cf6', '%23c084fc', '特優'),
+  merit: generateMedalSVG('%23f43f5e', '%23fb7185', '優等'),
+  gold: generateMedalSVG('%23eab308', '%23fde047', '金獎'),
+  silver: generateMedalSVG('%2394a3b8', '%23cbd5e1', '銀獎'),
+  good: generateMedalSVG('%23f97316', '%23fdba74', '佳作'),
+  pass: generateMedalSVG('%233b82f6', '%2393c5fd', '普獎')
+};
+
 const App = () => {
   const [apiKey, setApiKey] = useState('');
   const [gradeLevel, setGradeLevel] = useState(GRADE_LEVELS[2]); // Default to 5-6th grade
@@ -680,7 +691,7 @@ const App = () => {
   const [toast, setToast] = useState(null);
   const [classAnalysis, setClassAnalysis] = useState('');
   const [showChangelog, setShowChangelog] = useState(false);
-  const [customMedals, setCustomMedals] = useState({ grand: null, merit: null, gold: null, silver: null, good: null, pass: null });
+  const [customMedals, setCustomMedals] = useState(DEFAULT_MEDALS);
   const [batchResult, setBatchResult] = useState(null);
   const [showRegradeConfirm, setShowRegradeConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -769,11 +780,18 @@ const App = () => {
         try {
             const saved = await loadFromDB('customMedals');
             if (saved) {
-                setCustomMedals(saved);
+                const merged = { ...DEFAULT_MEDALS };
+                for (const key in saved) { if (saved[key]) merged[key] = saved[key]; }
+                setCustomMedals(merged);
             } else {
                  const legacy = localStorage.getItem('essay_grader_medals');
                  if (legacy) { 
-                     try { setCustomMedals(JSON.parse(legacy)); } catch (e) { console.error(e); } 
+                     try { 
+                         const legacyParsed = JSON.parse(legacy);
+                         const merged = { ...DEFAULT_MEDALS };
+                         for (const key in legacyParsed) { if (legacyParsed[key]) merged[key] = legacyParsed[key]; }
+                         setCustomMedals(merged); 
+                     } catch (e) { console.error(e); } 
                  }
             }
         } catch (e) { console.error("Error loading medals", e); }
@@ -1993,7 +2011,7 @@ const App = () => {
 
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">自訂獎牌圖示</label>
-              <MedalSettings medals={customMedals} onUpload={handleMedalUpload} onReset={() => setCustomMedals({})} />
+              <MedalSettings medals={customMedals} onUpload={handleMedalUpload} onReset={() => setCustomMedals(DEFAULT_MEDALS)} />
             </div>
 
             <div className="space-y-4">
