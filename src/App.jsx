@@ -1958,7 +1958,7 @@ const App = () => {
       <nav className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-40 px-6 h-16 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-2 text-indigo-700">
           <FileSpreadsheet className="bg-indigo-600 p-1.5 rounded-lg text-white" />
-          <h1 className="text-xl font-black">AI 文本批改助手 <span className="text-slate-300 font-light">V15.0</span></h1>
+          <h1 className="text-xl font-black">文本批改AI助手 <span className="text-slate-300 font-light">V15.0</span></h1>
         </div>
         <div className="flex gap-2">
             <button onClick={handleExportCSV} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors" title="匯出成績單 (CSV)"><FileSpreadsheet size={20} /></button>
