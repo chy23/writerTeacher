@@ -1954,7 +1954,7 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 text-slate-800 pb-20 font-sans selection:bg-indigo-200 selection:text-indigo-900">
+    <div className="min-h-screen bg-[#F0F4F8] text-slate-800 pb-20 font-sans selection:bg-indigo-200 selection:text-indigo-900">
       <nav className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-40 px-6 h-16 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-2 text-indigo-700">
           <FileSpreadsheet className="bg-indigo-600 p-1.5 rounded-lg text-white" />
@@ -1976,9 +1976,16 @@ const App = () => {
         <input type="file" ref={restoreInputRef} onChange={handleImportBackup} accept=".json" className="hidden" />
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <aside className="lg:col-span-1 space-y-6">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 space-y-6 lg:sticky lg:top-24 h-fit max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar pr-2">
+      <main className="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
+        {/* Left Sidebar (Controls) */}
+        <aside className="w-full lg:w-80 shrink-0 space-y-6">
+          <div className="bg-white p-7 rounded-[2rem] border-0 shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-7 lg:sticky lg:top-24 h-fit max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar pr-3">
+            
+            <div className="pb-4 border-b border-slate-100">
+              <h3 className="text-lg font-black text-slate-800 mb-1 flex items-center gap-2"><Settings size={18} className="text-indigo-500"/> 設定與控制</h3>
+              <p className="text-xs text-slate-400">請設定批改所需的各項參數</p>
+            </div>
+
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Gemini API Key</label>
               <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border rounded-2xl outline-none" placeholder="Enter API Key" />
@@ -2126,17 +2133,18 @@ const App = () => {
           </div>
         </aside>
 
-        <div className="lg:col-span-3 space-y-8">
+        <div className="flex-1 space-y-8 min-w-0">
           {isGeneratingSummary && !classAnalysis && (
-             <div className="bg-white p-8 rounded-[2rem] border border-indigo-100 shadow-xl flex items-center justify-center gap-3 text-indigo-600 animate-pulse">
+             <div className="bg-white p-8 rounded-[2rem] border-0 shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex items-center justify-center gap-3 text-indigo-600 animate-pulse">
                 <Sparkles size={24} className="text-indigo-500" />
                 <span className="font-bold text-lg">✨ 正在產生全班教學總結分析...</span>
              </div>
           )}
 
           {classAnalysis && (
-            <div className="bg-white p-8 rounded-[2rem] border border-indigo-100 shadow-xl animate-in slide-in-from-top duration-700">
-              <div className="flex items-center gap-3 mb-6">
+            <div className="bg-white p-8 rounded-[2rem] border-0 shadow-[0_8px_30px_rgb(0,0,0,0.08)] animate-in slide-in-from-top duration-700 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+              <div className="flex items-center gap-3 mb-6 mt-2">
                 <School className="p-3 bg-indigo-600 rounded-xl text-white shadow-lg" size={48} />
                 <h2 className="text-xl font-black text-indigo-900">全班教學總結分析</h2>
               </div>
@@ -2184,8 +2192,9 @@ const App = () => {
             {essays.map(essay => {
               const info = getGradeInfo(essay.score);
               return (
-                <div key={essay.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col md:flex-row gap-6 hover:shadow-2xl hover:shadow-indigo-100 hover:border-indigo-300 hover:-translate-y-1 transition-all duration-300">
-                  <div className="md:w-32 flex flex-col gap-2">
+                <div key={essay.id} className="bg-white p-7 rounded-[2rem] border-0 shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-col md:flex-row gap-8 hover:shadow-[0_15px_40px_rgb(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
+                  <div className={`absolute left-0 top-0 bottom-0 w-2 ${info.color.replace('text-', 'bg-')} opacity-80`}></div>
+                  <div className="md:w-40 flex flex-col gap-2 shrink-0">
                     <div className="aspect-[3/4] bg-slate-100 rounded-xl overflow-hidden border relative group cursor-pointer" onClick={() => setViewingImage(essay.images[0].preview)}>
                       <img src={essay.images[0].preview} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Essay" />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
@@ -2235,10 +2244,10 @@ const App = () => {
                     </div>
 
                     {essay.status === 'completed' && (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <button onClick={() => handleSingleCardDownload(essay, 'teacher')} className="flex items-center gap-1 text-[10px] font-bold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-indigo-600 hover:text-white transition-all"><FileDown size={14} /> 教師版</button>
-                        <button onClick={() => handleSingleCardDownload(essay, 'student')} className="flex items-center gap-1 text-[10px] font-bold bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-600 hover:text-white transition-all"><FileDown size={14} /> 學生版</button>
-                        <button onClick={() => processEssay(essay.id)} className="flex items-center gap-1 text-[10px] font-bold bg-amber-50 text-amber-600 px-3 py-1.5 rounded-lg hover:bg-amber-100 hover:text-amber-700 transition-all border border-amber-100 ml-auto"><RotateCw size={14} /> 重新批改</button>
+                      <div className="flex items-center gap-2 flex-wrap py-3 border-y border-slate-100 my-4">
+                        <button onClick={() => handleSingleCardDownload(essay, 'teacher')} className="flex items-center gap-1 text-[11px] font-bold bg-slate-100 text-slate-600 px-4 py-2 rounded-xl hover:bg-indigo-600 hover:text-white transition-all"><FileDown size={14} /> 教師版</button>
+                        <button onClick={() => handleSingleCardDownload(essay, 'student')} className="flex items-center gap-1 text-[11px] font-bold bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl hover:bg-indigo-600 hover:text-white transition-all"><FileDown size={14} /> 學生版</button>
+                        <button onClick={() => processEssay(essay.id)} className="flex items-center gap-1 text-[11px] font-bold bg-amber-50 text-amber-600 px-4 py-2 rounded-xl hover:bg-amber-500 hover:text-white transition-all border border-amber-100 ml-auto shadow-sm"><RotateCw size={14} /> 重新批改</button>
                       </div>
                     )}
 
