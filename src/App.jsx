@@ -315,6 +315,7 @@ const POETRY_PROGRESS = {
 };
 
 const CHANGELOG = [
+  { version: "最新更新", content: ["UI 優化：升級為高對比度、極簡版面，卡片與區塊層次更鮮明，大幅提升閱讀體驗", "功能：內建多款精美的等第獎牌圖示作為永久預設值", "修復：解決 GitHub Pages 部署時的空白畫面與編譯錯誤"] },
   { version: "V15.3.0", content: ["系統：調整模型優先順序，將 Gemini-3-Flash 設為首選備援模型"] },
   { version: "V15.2.0", content: ["系統：新增 Gemini-3.5-Flash 模型並設為優先預設"] },
   { version: "V15.1.0", content: ["優化：圖卡版面防溢出機制，評語自動限制最多 2 點，超出範圍自動以「...」省略", "優化：AI 提示詞更新，強制模型產出精簡評語"] },
@@ -1976,7 +1977,7 @@ const App = () => {
       <nav className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-40 px-6 h-16 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-2 text-indigo-700">
           <FileSpreadsheet className="bg-indigo-600 p-1.5 rounded-lg text-white" />
-          <h1 className="text-xl font-black">文本批改AI助手 <span className="text-slate-300 font-light">V15.0</span></h1>
+          <h1 className="text-xl font-black">文本批改AI助手</h1>
         </div>
         <div className="flex gap-2">
             <button onClick={handleExportCSV} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors" title="匯出成績單 (CSV)"><FileSpreadsheet size={20} /></button>
