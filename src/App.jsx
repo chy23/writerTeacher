@@ -339,7 +339,7 @@ const fileToBase64 = (file) => new Promise((resolve, reject) => {
 // Dynamic Script Loader (for PDF/Docx/PPT parsing)
 const loadScript = (src) => {
   return new Promise((resolve, reject) => {
-    if (document.querySelector(\`script[src="\${src}"]\`)) { resolve(); return; }
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
     const script = document.createElement('script');
     script.src = src; script.async = true;
     script.onload = resolve; script.onerror = reject;
@@ -361,7 +361,7 @@ const renderTextToImage = (text, title = "Document Content") => {
   ctx.fillStyle = '#000000'; ctx.font = '16px "Microsoft JhengHei", sans-serif';
   let y = 120;
   lines.forEach(line => { ctx.fillText(line, padding, y); y += lineHeight; });
-  return new Promise(resolve => { canvas.toBlob(blob => { resolve(new File([blob], \`\${title}.png\`, { type: 'image/png' })); }, 'image/png'); });
+  return new Promise(resolve => { canvas.toBlob(blob => { resolve(new File([blob], `${title}.png`, { type: 'image/png' })); }, 'image/png'); });
 };
 
 // IndexedDB Helpers
@@ -455,32 +455,32 @@ const stripCodes = (text) => {
 
   // 1. Remove bracketed codes (broad pattern for safety)
   // Matches ( ... 1a-III-1 ... ) or ( ... 自-E-A1 ... )
-  cleaned = cleaned.replace(/[\\(（\\[].*?[\\)）\\]]/g, (match) => {
+  cleaned = cleaned.replace(/[\(（\[].*?[\)）\]]/g, (match) => {
       // Check if the content looks like a curriculum code
       if (match.match(/-[IVXivxⅠⅡⅢⅣⅤ]+-/)) return ""; // Roman numerals structure
-      if (match.match(/[自社國]-[EJS]-[A-C]\\w+/)) return ""; // Core Competency
-      if (match.match(/[環性人道家品法科資能安防戶國原]+[A-Z]\\d+/)) return ""; // Issues
+      if (match.match(/[自社國]-[EJS]-[A-C]\w+/)) return ""; // Core Competency
+      if (match.match(/[環性人道家品法科資能安防戶國原]+[A-Z]\d+/)) return ""; // Issues
       return match;
   });
 
   // 2. Remove naked codes (Powerful Regex for all formats)
   // Format: 社 1a-Ⅲ-1, 1a-Ⅲ-1 (Content/Performance)
-  cleaned = cleaned.replace(/(?:[社公歷地國自然數健藝綜活]\\s*)?[a-zA-Z0-9]+\\s*-[IVXivxⅠⅡⅢⅣⅤ]+\\-\\d+/gi, "");
+  cleaned = cleaned.replace(/(?:[社公歷地國自然數健藝綜活]\s*)?[a-zA-Z0-9]+\s*-[IVXivxⅠⅡⅢⅣⅤ]+-\d+/gi, "");
   
   // Format: 自-E-A1 (Core Competency)
-  cleaned = cleaned.replace(/[自社國語數健藝綜活科]-[EJS]-[A-C]\\w+/gi, "");
+  cleaned = cleaned.replace(/[自社國語數健藝綜活科]-[EJS]-[A-C]\w+/gi, "");
   
   // Format: 環E1, 性U1 etc (Issue Infusion)
-  cleaned = cleaned.replace(/[環性人道家品法科資能安防戶國原]+[A-Z]\\d+/gi, "");
+  cleaned = cleaned.replace(/[環性人道家品法科資能安防戶國原]+[A-Z]\d+/gi, "");
 
   // Format: English codes like tr-IV-2, ai-IV-3, pa-III-1 (Inquiry)
-  cleaned = cleaned.replace(/[a-zA-Z]{2,}-[IVXivxⅠⅡⅢⅣⅤ]+\\-\\d+/gi, "");
+  cleaned = cleaned.replace(/[a-zA-Z]{2,}-[IVXivxⅠⅡⅢⅣⅤ]+-\d+/gi, "");
 
   // Format: tr-Vc-1 (High school inquiry)
-  cleaned = cleaned.replace(/[a-zA-Z]{2,}-[A-Za-z]+\\-\\d+/gi, "");
+  cleaned = cleaned.replace(/[a-zA-Z]{2,}-[A-Za-z]+-\d+/gi, "");
 
   // Cleanup extra spaces and punctuation left behind
-  return cleaned.replace(/\\s{2,}/g, " ").replace(/ ,/g, ",").trim();
+  return cleaned.replace(/\s{2,}/g, " ").replace(/ ,/g, ",").trim();
 };
 
 // --- 4. 繪圖工具 (Drawing Utils) ---
@@ -502,14 +502,14 @@ const wrapText = (ctx, text, maxWidth) => {
 
 const drawBulletText = (ctx, text, x, y, maxWidth, lineHeight, color = "#334155", maxY = 9999, dotScale = 1) => {
   if (!text) return y;
-  const rawLines = text.split('\\n').filter(l => l.trim().length > 0);
+  const rawLines = text.split('\n').filter(l => l.trim().length > 0);
   let currentY = y;
     
   for (let i = 0; i < rawLines.length; i++) {
     if (currentY + lineHeight > maxY) break; 
     
     const rawLine = rawLines[i];
-    const cleanLine = rawLine.replace(/^[\\s\\-\\–\\—•·*]+/, '').trim();
+    const cleanLine = rawLine.replace(/^[\s\-\–\—•·*]+/, '').trim();
     
     ctx.fillStyle = "#6366f1";
     ctx.beginPath();
@@ -553,7 +553,7 @@ const MedalSettings = ({ medals, onUpload, onReset }) => {
       <div className="grid grid-cols-3 gap-2">
         {grades.map((grade) => (
           <label key={grade.key} className="cursor-pointer group relative">
-            <div className={\`aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden \${medals[grade.key] ? 'border-indigo-500 bg-white' : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'}\`}>
+            <div className={`aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${medals[grade.key] ? 'border-indigo-500 bg-white' : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'}`}>
               {medals[grade.key] ? (
                 <img src={medals[grade.key]} alt={grade.label} className="w-full h-full object-contain p-1" />
               ) : (
@@ -597,7 +597,7 @@ const ScoreDistributionChart = ({ essays }) => {
         {stats.map((s, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-2">
             <div className="text-[10px] font-bold text-slate-400">{s.val > 0 ? s.val : ''}</div>
-            <div className="w-full rounded-t-lg transition-all duration-1000 bg-indigo-50/10 border-t-2 border-indigo-500" style={{ height: \`\${(s.val / maxVal) * 100}%\`, minHeight: s.val > 0 ? '4px' : '0px' }} />
+            <div className="w-full rounded-t-lg transition-all duration-1000 bg-indigo-50/10 border-t-2 border-indigo-500" style={{ height: `${(s.val / maxVal) * 100}%`, minHeight: s.val > 0 ? '4px' : '0px' }} />
             <div className="text-[10px] font-bold text-slate-500 whitespace-nowrap">{s.label}</div>
           </div>
         ))}
@@ -610,17 +610,17 @@ const SimpleMarkdown = ({ text }) => {
   if (!text) return null;
   return (
     <div className="space-y-2 font-serif">
-      {text.split('\\n').map((line, index) => {
+      {text.split('\n').map((line, index) => {
         const trimmed = line.trim();
         if (!trimmed) return <div key={index} className="h-2" />;
-        if (line.match(/^#{1,6}\\s/)) {
-          return <h3 key={index} className="text-lg font-bold text-indigo-900 mt-4 mb-2">{line.replace(/^#{1,6}\\s+/, '')}</h3>;
+        if (line.match(/^#{1,6}\s/)) {
+          return <h3 key={index} className="text-lg font-bold text-indigo-900 mt-4 mb-2">{line.replace(/^#{1,6}\s+/, '')}</h3>;
         }
-        if (line.match(/^[\\*\\-]\\s/)) {
+        if (line.match(/^[\*\-]\s/)) {
           return (
             <div key={index} className="flex items-start gap-2 ml-2 mb-1">
               <span className="mt-2 w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-              <p className="text-slate-700 leading-relaxed">{line.replace(/^[\\*\\-]\\s+/, '')}</p>
+              <p className="text-slate-700 leading-relaxed">{line.replace(/^[\*\-]\s+/, '')}</p>
             </div>
           );
         }
@@ -631,9 +631,9 @@ const SimpleMarkdown = ({ text }) => {
 };
 
 const Toast = ({ message, type, onClose, action }) => (
-  <div className={\`fixed bottom-6 right-6 z-50 flex items-center space-x-3 px-6 py-4 rounded-2xl shadow-2xl border animate-in slide-in-from-right duration-300 \${
+  <div className={`fixed bottom-6 right-6 z-50 flex items-center space-x-3 px-6 py-4 rounded-2xl shadow-2xl border animate-in slide-in-from-right duration-300 ${
     type === 'error' ? 'bg-red-50 border-red-100 text-red-600' : 'bg-white border-slate-100 text-slate-600'
-  }\`}>
+  }`}>
     {type === 'error' ? <AlertCircle size={20} /> : <CheckCircle2 size={20} className="text-emerald-500" />}
     <span className="font-bold text-sm">{message}</span>
     {action && (
@@ -790,7 +790,7 @@ const App = () => {
     const reader = new FileReader();
     reader.onloadend = () => {
       setCustomMedals(prev => { return { ...prev, [key]: reader.result }; });
-      showToast(\`已更新 \${key} 獎牌圖示\`);
+      showToast(`已更新 ${key} 獎牌圖示`);
     };
     reader.readAsDataURL(file);
   };
@@ -811,7 +811,7 @@ const App = () => {
 
   const handleExportCSV = () => {
       if (essays.length === 0) return showToast("目前沒有資料可以匯出", "error");
-      const BOM = "\\uFEFF"; 
+      const BOM = "\uFEFF"; 
         
       const firstCompleted = essays.find(e => e.status === 'completed' && e.detailedScores);
       let rubricHeaders = [];
@@ -832,22 +832,22 @@ const App = () => {
           const scoreMap = {};
           if (e.detailedScores) { e.detailedScores.forEach(ds => scoreMap[ds.label] = ds.score); }
           const scores = rubricHeaders.map(label => scoreMap[label] || "0");
-          const comments = \`[亮點] \${e.highlights || ''} \\n[建議] \${e.suggestions || ''}\`.replace(/"/g, '""'); 
+          const comments = `[亮點] ${e.highlights || ''} \n[建議] ${e.suggestions || ''}`.replace(/"/g, '""'); 
 
           // Originality Info for CSV
-          const aiRisk = e.originality ? \`\${e.originality.aiRatio}%\` : "N/A";
-          const copyRisk = e.originality ? \`\${e.originality.copyRatio}%\` : "N/A";
+          const aiRisk = e.originality ? `${e.originality.aiRatio}%` : "N/A";
+          const copyRisk = e.originality ? `${e.originality.copyRatio}%` : "N/A";
           const reason = e.originality ? e.originality.reason : "";
 
-          return [ \`"\${e.studentNumber || ''}"\`, \`"\${e.studentName || ''}"\`, e.score, ...scores, \`"\${comments}"\`, \`"\${aiRisk}"\`, \`"\${copyRisk}"\`, \`"\${reason}"\` ].join(",");
+          return [ `"${e.studentNumber || ''}"`, `"${e.studentName || ''}"`, e.score, ...scores, `"${comments}"`, `"${aiRisk}"`, `"${copyRisk}"`, `"${reason}"` ].join(",");
       });
 
-      const csvContent = BOM + headers.join(",") + "\\n" + rows.join("\\n");
+      const csvContent = BOM + headers.join(",") + "\n" + rows.join("\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = \`\${essayTopic || '成績單'}_\${gradingDate}.csv\`;
+      link.download = `${essayTopic || '成績單'}_${gradingDate}.csv`;
       link.click();
       URL.revokeObjectURL(url);
       showToast("成績單匯出成功");
@@ -877,7 +877,7 @@ const App = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = \`\${essayTopic || '批改資料'}_備份_\${new Date().toISOString().slice(0, 10)}.json\`;
+      link.download = `${essayTopic || '批改資料'}_備份_${new Date().toISOString().slice(0, 10)}.json`;
       link.click();
       URL.revokeObjectURL(url);
       showToast("批改紀錄已成功導出");
@@ -908,7 +908,7 @@ const App = () => {
           return { ...e, images: restoredImages };
         }));
         setEssays(restoredEssays);
-        showToast(\`成功匯入 \${restoredEssays.length} 份紀錄\`);
+        showToast(`成功匯入 ${restoredEssays.length} 份紀錄`);
       } catch (err) { showToast("匯入失敗，格式錯誤", "error"); }
     };
     reader.readAsText(file);
@@ -929,16 +929,16 @@ const App = () => {
     
     // Header
     c.fillStyle = "#4f46e5"; c.fillRect(0, 0, w, 120 * scale);
-    c.fillStyle = "#ffffff"; c.font = \`bold \${36 * scale}px "Microsoft JhengHei", sans-serif\`; c.textAlign = "center";
+    c.fillStyle = "#ffffff"; c.font = `bold ${36 * scale}px "Microsoft JhengHei", sans-serif`; c.textAlign = "center";
     c.fillText("全班教學總結分析報告", w / 2, 75 * scale);
 
     // Metadata
     const metaStartY = 160 * scale; const lineHeightMeta = 30 * scale;
-    c.fillStyle = "#334155"; c.font = \`bold \${16 * scale}px "Microsoft JhengHei", sans-serif\`; c.textAlign = "left";
-    c.fillText(\`班級年級：\${grade}\`, marginX, metaStartY);
-    c.fillText(\`作文題目：\${topic}\`, marginX, metaStartY + lineHeightMeta);
-    c.fillText(\`批改日期：\${date}\`, marginX, metaStartY + lineHeightMeta * 2);
-    c.fillText(\`批改份數：\${essayList.length} 份\`, marginX, metaStartY + lineHeightMeta * 3);
+    c.fillStyle = "#334155"; c.font = `bold ${16 * scale}px "Microsoft JhengHei", sans-serif`; c.textAlign = "left";
+    c.fillText(`班級年級：${grade}`, marginX, metaStartY);
+    c.fillText(`作文題目：${topic}`, marginX, metaStartY + lineHeightMeta);
+    c.fillText(`批改日期：${date}`, marginX, metaStartY + lineHeightMeta * 2);
+    c.fillText(`批改份數：${essayList.length} 份`, marginX, metaStartY + lineHeightMeta * 3);
 
     // Stats Chart
     const stats = { grand: 0, merit: 0, gold: 0, silver: 0, good: 0, pass: 0 };
@@ -956,9 +956,9 @@ const App = () => {
         
         c.fillStyle = getGradeColorHex(k);
         c.fillRect(xPos, baseLine - barHeight, barWidth, barHeight);
-        c.fillStyle = "#64748b"; c.font = \`bold \${12 * scale}px "Microsoft JhengHei", sans-serif\`; c.textAlign = "center";
+        c.fillStyle = "#64748b"; c.font = `bold ${12 * scale}px "Microsoft JhengHei", sans-serif`; c.textAlign = "center";
         c.fillText(v, xPos + barWidth/2, baseLine - barHeight - 5 * scale);
-        c.font = \`\${10 * scale}px "Microsoft JhengHei", sans-serif\`;
+        c.font = `${10 * scale}px "Microsoft JhengHei", sans-serif`;
         c.fillText(info.label, xPos + barWidth/2, baseLine + 15 * scale);
     });
 
@@ -967,8 +967,8 @@ const App = () => {
     c.beginPath(); c.moveTo(marginX, dividerY); c.lineTo(w - marginX, dividerY); c.stroke();
 
     let currentY = dividerY + 40 * scale;
-    const cleanText = analysis.replace(/#{1,6}\\s?/g, '').replace(/\\*\\*/g, '');
-    const paragraphs = cleanText.split('\\n');
+    const cleanText = analysis.replace(/#{1,6}\s?/g, '').replace(/\*\*/g, '');
+    const paragraphs = cleanText.split('\n');
 
     c.textAlign = "left";
     const HEADER_SIZE_PX = 40; const BODY_SIZE_PX = 32;      
@@ -977,12 +977,12 @@ const App = () => {
     paragraphs.forEach(para => {
         if (!para.trim()) return;
         let fontSize = BODY_SIZE_PX; let fontWeight = "normal"; let color = "#334155"; let lineHeight = BODY_LH;
-        const isListHeader = /^[一二三四五12345]、|\\d+\\./.test(para.trim());
+        const isListHeader = /^[一二三四五12345]、|\d+\./.test(para.trim());
         const isKeywordHeader = (para.length < 50 && (para.includes("整體") || para.includes("建議") || para.includes("缺點") || para.includes("表現")));
 
         if (isListHeader || isKeywordHeader) { fontSize = HEADER_SIZE_PX; color = "#1e293b"; fontWeight = "bold"; lineHeight = HEADER_LH; }
 
-        c.font = \`\${fontWeight} \${fontSize}px "Microsoft JhengHei", sans-serif\`; c.fillStyle = color;
+        c.font = `${fontWeight} ${fontSize}px "Microsoft JhengHei", sans-serif`; c.fillStyle = color;
         const lines = wrapText(c, para, contentWidth);
 
         lines.forEach(line => {
@@ -990,7 +990,7 @@ const App = () => {
                 pages.push(cvs.toDataURL('image/png'));
                 ({ cvs, c } = createPage());
                 currentY = marginY + 20 * scale;
-                c.font = \`\${fontWeight} \${fontSize}px "Microsoft JhengHei", sans-serif\`; c.fillStyle = color;
+                c.font = `${fontWeight} ${fontSize}px "Microsoft JhengHei", sans-serif`; c.fillStyle = color;
             }
             c.fillText(line, marginX, currentY);
             currentY += lineHeight;
@@ -1046,8 +1046,8 @@ const App = () => {
 
     // Title
     ctx.fillStyle = "#ffffff"; 
-    ctx.font = \`bold \${layout.titleSize}px "Microsoft JhengHei", sans-serif\`;
-    ctx.fillText(\`『\${essayTopic || '多元寫作'}』評分表\`, layout.margin + 50, layout.titleY); 
+    ctx.font = `bold ${layout.titleSize}px "Microsoft JhengHei", sans-serif`;
+    ctx.fillText(`『${essayTopic || '多元寫作'}』評分表`, layout.margin + 50, layout.titleY); 
 
     // Metadata Tag
     let metaText = "";
@@ -1055,16 +1055,16 @@ const App = () => {
     if (essay.evaluatedType) {
         metaIcon = essay.evaluatedType.includes("自然") ? "🧪" : "⚖️";
         const typeName = essay.evaluatedType.includes("自然") ? "自然科學類" : "社會領域類";
-        metaText = \`\${metaIcon} \${typeName}\`;
+        metaText = `${metaIcon} ${typeName}`;
     } else if (textTypeId !== 'auto') {
         const gradeText = gradeLevel.split(" ")[0];
         const textType = TEXT_TYPES.find(t=>t.id===textTypeId);
         const label = textType ? textType.label.split(" ")[1] : "一般";
-        metaText = \`\${gradeText} · \${label}\`;
+        metaText = `${gradeText} · ${label}`;
     }
 
     if (metaText) {
-        ctx.font = \`bold \${layout.metaSize}px "Microsoft JhengHei", sans-serif\`;
+        ctx.font = `bold ${layout.metaSize}px "Microsoft JhengHei", sans-serif`;
         const textMetrics = ctx.measureText(metaText);
         const tagWidth = textMetrics.width + (isA5 ? 60 : 40);
         const tagHeight = isA5 ? 80 : 60;
@@ -1078,13 +1078,13 @@ const App = () => {
     }
 
     // Student Info
-    ctx.textAlign = "right"; ctx.font = \`bold \${layout.studentInfoSize}px "Microsoft JhengHei", sans-serif\`; ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+    ctx.textAlign = "right"; ctx.font = `bold ${layout.studentInfoSize}px "Microsoft JhengHei", sans-serif`; ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
     
     let studentInfo = "";
     if (mode === 'student') {
-        studentInfo = essay.studentNumber ? \`#\${essay.studentNumber}\` : '';
+        studentInfo = essay.studentNumber ? `#${essay.studentNumber}` : '';
     } else {
-        studentInfo = essay.studentNumber ? \`#\${essay.studentNumber} \${essay.studentName}\` : essay.studentName;
+        studentInfo = essay.studentNumber ? `#${essay.studentNumber} ${essay.studentName}` : essay.studentName;
     }
 
     ctx.fillText(studentInfo, w - layout.margin - 50, layout.titleY); 
@@ -1110,7 +1110,7 @@ const App = () => {
       ctx.drawImage(medalImg, centerX_Right - imgSize/2, centerY_Medal - imgSize/2, imgSize, imgSize);
     } else {
       ctx.fillStyle = "#f1f5f9"; ctx.beginPath(); ctx.arc(centerX_Right, centerY_Medal, layout.medalRadius, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#cbd5e1"; ctx.font = \`bold \${layout.medalRadius * 0.7}px "Microsoft JhengHei", sans-serif\`; ctx.textAlign = "center";
+      ctx.fillStyle = "#cbd5e1"; ctx.font = `bold ${layout.medalRadius * 0.7}px "Microsoft JhengHei", sans-serif`; ctx.textAlign = "center";
       ctx.fillText("🏅", centerX_Right, centerY_Medal + (isA5 ? 30 : 20)); ctx.textAlign = "left";
     }
 
@@ -1120,17 +1120,17 @@ const App = () => {
     const badgeW = isA5 ? 240 : 180; const badgeH = isA5 ? 80 : 60;
     const badgeX = centerX_Right - badgeW / 2; const badgeY = centerY_Medal + layout.medalRadius + 20; 
     ctx.beginPath(); ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 30); ctx.fill();
-    ctx.fillStyle = "#ffffff"; ctx.font = \`bold \${layout.metaSize}px "Microsoft JhengHei", sans-serif\`;
+    ctx.fillStyle = "#ffffff"; ctx.font = `bold ${layout.metaSize}px "Microsoft JhengHei", sans-serif`;
     ctx.textAlign = "center"; ctx.fillText(info.label, centerX_Right, badgeY + (isA5 ? 56 : 42));
     ctx.restore();
 
     // Big Score
     if (mode === 'teacher') {
       ctx.fillStyle = "#4f46e5"; ctx.textAlign = "center";
-      ctx.font = \`bold \${layout.scoreSize}px "Microsoft JhengHei", sans-serif\`; 
+      ctx.font = `bold ${layout.scoreSize}px "Microsoft JhengHei", sans-serif`; 
       const scoreY = badgeY + (isA5 ? 220 : 160);
       ctx.fillText(displayScore, centerX_Right, scoreY); 
-      ctx.font = \`bold \${layout.metaSize}px "Microsoft JhengHei", sans-serif\`; ctx.fillStyle = "#94a3b8";
+      ctx.font = `bold ${layout.metaSize}px "Microsoft JhengHei", sans-serif`; ctx.fillStyle = "#94a3b8";
       ctx.fillText("分", centerX_Right + (isA5 ? 140 : 100), scoreY); ctx.textAlign = "left";
     }
 
@@ -1140,7 +1140,7 @@ const App = () => {
     
     (essay.detailedScores || []).slice(0, 4).forEach(ds => {
       // Label
-      ctx.fillStyle = "#475569"; ctx.font = \`bold \${layout.barLabelSize}px "Microsoft JhengHei", sans-serif\`; 
+      ctx.fillStyle = "#475569"; ctx.font = `bold ${layout.barLabelSize}px "Microsoft JhengHei", sans-serif`; 
       ctx.fillText(ds.label, layout.margin + 50, barY);
       
       const total = ds.total && ds.total > 0 ? ds.total : 10; 
@@ -1170,9 +1170,9 @@ const App = () => {
       // 3. Draw Score Text (Non-overlapping)
       if (mode === 'teacher') {
         ctx.fillStyle = "#6366f1"; 
-        ctx.font = \`bold \${layout.barLabelSize * 0.9}px "Microsoft JhengHei", sans-serif\`; 
+        ctx.font = `bold ${layout.barLabelSize * 0.9}px "Microsoft JhengHei", sans-serif`; 
         ctx.textAlign = "left"; 
-        ctx.fillText(\`\${score}/\${total}\`, barX + barFullWidth + (isA5 ? 20 : 15), barY + (isA5 ? 45 : 35)); 
+        ctx.fillText(`${score}/${total}`, barX + barFullWidth + (isA5 ? 20 : 15), barY + (isA5 ? 45 : 35)); 
       }
       barY += layout.barGap; 
     });
@@ -1187,7 +1187,7 @@ const App = () => {
         
         const riskY = barY; 
         
-        ctx.font = \`bold \${layout.barLabelSize}px "Microsoft JhengHei", sans-serif\`; 
+        ctx.font = `bold ${layout.barLabelSize}px "Microsoft JhengHei", sans-serif`; 
         ctx.fillStyle = "#475569";
         ctx.fillText("🔍 原創性檢核", layout.margin + 50, riskY);
 
@@ -1203,8 +1203,8 @@ const App = () => {
         const aiBadgeY = riskY + (isA5 ? 30 : 20);
         ctx.fillStyle = aiColor;
         ctx.beginPath(); ctx.roundRect(aiBadgeX, aiBadgeY, isA5 ? 300 : 220, isA5 ? 60 : 40, 10); ctx.fill();
-        ctx.fillStyle = "#fff"; ctx.font = \`bold \${layout.barLabelSize * 0.8}px "Microsoft JhengHei", sans-serif\`;
-        ctx.fillText(\`AI 佔比: \${aiRatio}%\`, aiBadgeX + 20, aiBadgeY + (isA5 ? 42 : 28));
+        ctx.fillStyle = "#fff"; ctx.font = `bold ${layout.barLabelSize * 0.8}px "Microsoft JhengHei", sans-serif`;
+        ctx.fillText(`AI 佔比: ${aiRatio}%`, aiBadgeX + 20, aiBadgeY + (isA5 ? 42 : 28));
 
         // Copy Risk Badge
         const copyColor = getRiskColor(copyRatio);
@@ -1212,17 +1212,17 @@ const App = () => {
         ctx.fillStyle = copyColor;
         ctx.beginPath(); ctx.roundRect(copyBadgeX, aiBadgeY, isA5 ? 300 : 220, isA5 ? 60 : 40, 10); ctx.fill();
         ctx.fillStyle = "#fff"; 
-        ctx.fillText(\`抄襲佔比: \${copyRatio}%\`, copyBadgeX + 20, aiBadgeY + (isA5 ? 42 : 28));
+        ctx.fillText(`抄襲佔比: ${copyRatio}%`, copyBadgeX + 20, aiBadgeY + (isA5 ? 42 : 28));
 
         // Reason - V15.0.0: Always show for clarity, adjust color based on risk
         const isRisky = aiRatio >= 20 || copyRatio >= 20;
         ctx.fillStyle = isRisky ? "#ef4444" : "#64748b"; 
-        ctx.font = \`bold \${layout.barLabelSize * 0.7}px "Microsoft JhengHei", sans-serif\`;
+        ctx.font = `bold ${layout.barLabelSize * 0.7}px "Microsoft JhengHei", sans-serif`;
         
         let displayReason = reason.substring(0, 45);
         if (reason.length > 45) displayReason += "...";
         
-        ctx.fillText(\`判定結果: \${displayReason}\`, aiBadgeX, aiBadgeY + (isA5 ? 100 : 70));
+        ctx.fillText(`判定結果: ${displayReason}`, aiBadgeX, aiBadgeY + (isA5 ? 100 : 70));
         dynamicContentY = aiBadgeY + (isA5 ? 120 : 90); 
     }
 
@@ -1233,16 +1233,16 @@ const App = () => {
     const contentWidth = w - (layout.margin * 2) - 100;
     const maxYLimit = h - 150; 
 
-    ctx.font = \`bold \${layout.commentTitleSize}px "Microsoft JhengHei", sans-serif\`; ctx.fillStyle = "#4f46e5"; 
+    ctx.font = `bold ${layout.commentTitleSize}px "Microsoft JhengHei", sans-serif`; ctx.fillStyle = "#4f46e5"; 
     ctx.fillText("✨ 文章亮點", layout.margin + 50, commentsStartY);
     
-    ctx.font = \`\${layout.commentBodySize}px "Microsoft JhengHei", sans-serif\`; 
+    ctx.font = `${layout.commentBodySize}px "Microsoft JhengHei", sans-serif`; 
     
     // 確保最多只畫兩點重點
     const limitPoints = (txt) => {
         if (!txt) return "";
-        const lines = txt.split('\\n').filter(l => l.trim().length > 0);
-        return lines.slice(0, 2).join('\\n');
+        const lines = txt.split('\n').filter(l => l.trim().length > 0);
+        return lines.slice(0, 2).join('\n');
     };
 
     const rawHighlights = mode === 'student' ? stripCodes(essay.highlights) : essay.highlights;
@@ -1257,9 +1257,9 @@ const App = () => {
     nextY = Math.max(nextY + (isA5 ? 60 : 40), commentsStartY + (isA5 ? 300 : 220)); 
 
     if (nextY < maxYLimit - (isA5 ? 200 : 150)) { 
-        ctx.font = \`bold \${layout.commentTitleSize}px "Microsoft JhengHei", sans-serif\`; ctx.fillStyle = "#f59e0b";
+        ctx.font = `bold ${layout.commentTitleSize}px "Microsoft JhengHei", sans-serif`; ctx.fillStyle = "#f59e0b";
         ctx.fillText("💡 這樣寫會更好", layout.margin + 50, nextY);
-        ctx.font = \`\${layout.commentBodySize}px "Microsoft JhengHei", sans-serif\`; 
+        ctx.font = `${layout.commentBodySize}px "Microsoft JhengHei", sans-serif`; 
         nextY = drawBulletText(ctx, suggestionsText, layout.margin + 90, nextY + (isA5 ? 80 : 60), contentWidth, layout.commentLineHeight, "#334155", maxYLimit, isA5 ? 1 : 0.8);
     }
 
@@ -1267,18 +1267,18 @@ const App = () => {
     const footerY = layout.footerY;
 
     if (mode === 'teacher') {
-        const curriculumRegex = /(?:國語|國文|自然|社會|歷史|地理|公民|自|社|歷|地|公|tr|tm|pa|po|pc|pe)\\s*[a-zA-Z0-9\\-\\u2160-\\u216F\\.]+/g;
-        const allText = \`\${essay.highlights} \${essay.suggestions}\`;
+        const curriculumRegex = /(?:國語|國文|自然|社會|歷史|地理|公民|自|社|歷|地|公|tr|tm|pa|po|pc|pe)\s*[a-zA-Z0-9\-\u2160-\u216F\.]+/g;
+        const allText = `${essay.highlights} ${essay.suggestions}`;
         const matches = [...new Set(allText.match(curriculumRegex) || [])]; 
 
         if (matches.length > 0) {
-            ctx.font = \`bold \${layout.footerSize}px "Microsoft JhengHei", sans-serif\`; 
+            ctx.font = `bold ${layout.footerSize}px "Microsoft JhengHei", sans-serif`; 
             ctx.fillStyle = "#64748b";
             ctx.fillText("📌 課綱對應：", layout.margin + 50, footerY);
             
             let tagX = layout.margin + (isA5 ? 290 : 220); let tagY = footerY - (isA5 ? 45 : 35);
             const paddingX = isA5 ? 20 : 15; const gapX = isA5 ? 15 : 10; const maxWidth = w - 400;
-            ctx.font = \`bold \${layout.footerSize * 0.9}px "Microsoft JhengHei", sans-serif\`;
+            ctx.font = `bold ${layout.footerSize * 0.9}px "Microsoft JhengHei", sans-serif`;
 
             matches.forEach(tag => {
                 const textMetrics = ctx.measureText(tag);
@@ -1292,8 +1292,8 @@ const App = () => {
         }
     }
 
-    ctx.font = \`italic \${layout.footerSize}px "Microsoft JhengHei", sans-serif\`; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "right";
-    ctx.fillText(\`日期：\${gradingDate}\`, w - layout.margin - 30, footerY);
+    ctx.font = `italic ${layout.footerSize}px "Microsoft JhengHei", sans-serif`; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "right";
+    ctx.fillText(`日期：${gradingDate}`, w - layout.margin - 30, footerY);
 
     return canvas.toDataURL('image/png');
   };
@@ -1303,7 +1303,7 @@ const App = () => {
         const dataUrl = await drawEssayCard(essay, mode);
         const link = document.createElement('a');
         link.href = dataUrl;
-        link.download = \`\${essay.studentNumber || ''}_\${essay.studentName || 'student'}_\${mode === 'teacher' ? '教師版' : '學生版'}.png\`;
+        link.download = `${essay.studentNumber || ''}_${essay.studentName || 'student'}_${mode === 'teacher' ? '教師版' : '學生版'}.png`;
         link.click();
     } catch (e) {
         console.error(e);
@@ -1418,7 +1418,7 @@ const App = () => {
         }
       }
 
-      doc.save(\`\${essayTopic || '批改報告'}_\${mode === 'teacher' ? '教師版' : '學生版'}.pdf\`);
+      doc.save(`${essayTopic || '批改報告'}_${mode === 'teacher' ? '教師版' : '學生版'}.pdf`);
       showToast("PDF 下載成功");
 
     } catch (e) {
@@ -1434,7 +1434,7 @@ const App = () => {
     for (let i = 0; i < retries; i++) {
       if (stopRef.current) throw new Error("使用者停止"); 
       try {
-        const response = await fetch(\`https://generativelanguage.googleapis.com/v1beta/models/\${modelId}:generateContent?key=\${apiKey}\`,
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`,
           { 
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' }, 
@@ -1473,7 +1473,7 @@ const App = () => {
         else if (gradeLevel.includes("國中")) rubricContent = RUBRIC_CONTENT_JUNIOR;
         else rubricContent = RUBRIC_CONTENT_SENIOR;
 
-        systemPrompt = \`Role: 你是一位精通台灣 108 課綱（自然科學、社會領域、國語文）的資深教育評量專家。
+        systemPrompt = `Role: 你是一位精通台灣 108 課綱（自然科學、社會領域、國語文）的資深教育評量專家。
         
         Task: 請針對使用者提供的「跨領域多元寫作文本」進行評改。
         
@@ -1481,11 +1481,11 @@ const App = () => {
         1. **判斷領域**：
            - 若文本涉及實驗、變因、自然現象、模型建構 -> 分類為 **[自然科學探究]**。
            - 若文本涉及價值判斷、社會議題、歷史脈絡、人際互動 -> 分類為 **[社會領域探究]**。
-        2. **判斷階段**：依據設定為 \${gradeLevel}。
+        2. **判斷階段**：依據設定為 ${gradeLevel}。
 
         # Step 2: Apply 5-Level Rubric
         請嚴格依據以下定義的詳細 5 級分量表 (L1-L5) 進行評分：
-        \${rubricContent}
+        ${rubricContent}
 
         # Step 3: Output Format
         請依序輸出，並務必將等級 (L1-L5) 轉換為數值分數以供系統解析 (L5=100, L4=85, L3=75, L2=60, L1=40，可視情況微調)：
@@ -1514,10 +1514,10 @@ const App = () => {
         [自然科學探究] 或 [社會領域探究]
         
         ## OCR 辨識出的原文
-        (請一字不漏地轉錄圖片中的所有文字，這對後續處理很重要)\`;
+        (請一字不漏地轉錄圖片中的所有文字，這對後續處理很重要)`;
 
       } else if (textTypeId === 'Bf') {
-        systemPrompt = \`你是一位專業詩歌老師，熟悉台灣十二年國教國語文領域。本次批改「新詩/童詩」。級別：\${gradeLevel}。
+        systemPrompt = `你是一位專業詩歌老師，熟悉台灣十二年國教國語文領域。本次批改「新詩/童詩」。級別：${gradeLevel}。
           
           【課綱與白話比例】
           請遵循『60/40 黃金比例』：約 60% 評語需具體引用並標註 108 課綱條目（如：(6-I-1)），其餘 40% 使用白話、常見文本審閱用詞。
@@ -1539,12 +1539,12 @@ const App = () => {
           (數字)
           
           ## OCR 辨識出的原文
-          (一字不漏轉錄)\`;
+          (一字不漏轉錄)`;
       } else {
         const textType = TEXT_TYPES.find(t => t.id === textTypeId) || TEXT_TYPES[1];
-        const curriculumContext = CURRICULUM_PERFORMANCE[gradeLevel] ? \`\\n\\n參考課綱指標:\\n\${CURRICULUM_PERFORMANCE[gradeLevel].join('\\n')}\` : "";
+        const curriculumContext = CURRICULUM_PERFORMANCE[gradeLevel] ? `\n\n參考課綱指標:\n${CURRICULUM_PERFORMANCE[gradeLevel].join('\n')}` : "";
         
-        systemPrompt = \`你是一位專業國語文寫作評量專家。題目：\${essayTopic}。級別：\${gradeLevel}。文體：\${textType.label}。
+        systemPrompt = `你是一位專業國語文寫作評量專家。題目：${essayTopic}。級別：${gradeLevel}。文體：${textType.label}。
           
           【評分規準】
           1. 立意與取材 (35-40%)
@@ -1573,7 +1573,7 @@ const App = () => {
           
           ## OCR 辨識出的原文
           (一字不漏轉錄)
-          \${curriculumContext}\`;
+          ${curriculumContext}`;
       }
 
       const payload = { contents: [{ parts: [{ text: systemPrompt }, ...imageParts] }] };
@@ -1589,7 +1589,7 @@ const App = () => {
           usedModelId = model.id;
           break;
         } catch (e) {
-          console.warn(\`Model \${model.name} failed, trying next...\`);
+          console.warn(`Model ${model.name} failed, trying next...`);
           if (stopRef.current) break; 
           continue;
         }
@@ -1600,8 +1600,8 @@ const App = () => {
       const text = gradingResult.candidates?.[0]?.content?.parts?.[0]?.text || "辨識失敗。";
       
       // Parse Grading Logic
-      const typeMatch = text.match(/## 文本類型判定\\s*[:：]?\\s*\\n?\\s*\\[?(.*?)\\]?/);
-      const evaluatedType = typeMatch ? typeMatch[1].replace(/[\\[\\]]/g, '') : null;
+      const typeMatch = text.match(/## 文本類型判定\s*[:：]?\s*\n?\s*\[?(.*?)\]?/);
+      const evaluatedType = typeMatch ? typeMatch[1].replace(/[\[\]]/g, '') : null;
       
       // Extract OCR strictly
       let ocrText = "無法獲取原文內容";
@@ -1609,30 +1609,30 @@ const App = () => {
           ocrText = text.split("## OCR 辨識出的原文")[1]?.trim();
       }
       
-      const scoreMatch = text.match(/## 總分\\s*[:：]?\\s*(\\d+)/);
+      const scoreMatch = text.match(/## 總分\s*[:：]?\s*(\d+)/);
       
       let highlights = "";
-      if (text.includes("## 文章亮點")) highlights = text.split("## 文章亮點")[1]?.split("##")[0]?.replace(/\\*/g, '').trim();
+      if (text.includes("## 文章亮點")) highlights = text.split("## 文章亮點")[1]?.split("##")[0]?.replace(/\*/g, '').trim();
       
       let suggestions = "";
-      if (text.includes("## 這樣寫會更好")) suggestions = text.split("## 這樣寫會更好")[1]?.split("##")[0]?.replace(/\\*/g, '').trim();
+      if (text.includes("## 這樣寫會更好")) suggestions = text.split("## 這樣寫會更好")[1]?.split("##")[0]?.replace(/\*/g, '').trim();
 
       const scores = [];
-      const tableMatch = text.match(/#*\\s*評分表([\\s\\S]*?)(?=\\n##|$)/);
+      const tableMatch = text.match(/#*\s*評分表([\s\S]*?)(?=\n##|$)/);
       const tableContent = tableMatch ? tableMatch[1] : text;
 
       if (tableContent) {
-          const lines = tableContent.split('\\n');
+          const lines = tableContent.split('\n');
           for (const line of lines) {
-              const cleanLine = line.replace(/\\*/g, '').trim();
+              const cleanLine = line.replace(/\*/g, '').trim();
               if (!cleanLine) continue;
               
               if (cleanLine.includes('|')) {
                   const parts = cleanLine.split('|').map(p => p.trim()).filter(p => p);
                   if (parts.length >= 2 && !cleanLine.includes('---')) {
-                      const label = parts[0].replace(/[\\*\\[\\]\\-\\d\\.]/g, '').trim();
+                      const label = parts[0].replace(/[\*\[\]\-\d\.]/g, '').trim();
                       const scoreStr = parts[parts.length - 1];
-                      const smatch = scoreStr.match(/(\\d+)(?:\\s*\\/\\s*(\\d+))?/);
+                      const smatch = scoreStr.match(/(\d+)(?:\s*\/\s*(\d+))?/);
                       if (smatch && label.length >= 2 && !label.includes("項目") && !label.includes("分數") && !label.includes("總分")) {
                           let total = smatch[2] ? parseInt(smatch[2]) : 0;
                           if (total === 0 && textTypeId === 'auto') total = scores.length === 0 ? 40 : 30;
@@ -1642,7 +1642,7 @@ const App = () => {
                   continue;
               }
 
-              const match = cleanLine.match(/^(?:[\\-\\d\\.\\s\\[【]*)([^\\]】:：\\n]+)(?:[\\]】\\s]*)[::：]\\s*(\\d+)(?:\\s*\\/\\s*(\\d+))?/);
+              const match = cleanLine.match(/^(?:[\-\d\.\s\[【]*)([^\]】:：\n]+)(?:[\]】\s]*)[::：]\s*(\d+)(?:\s*\/\s*(\d+))?/);
               
               if (match) {
                   const label = match[1].trim();
@@ -1681,8 +1681,8 @@ const App = () => {
               const rawJson = origResult.candidates?.[0]?.content?.parts?.[0]?.text;
               
               if (rawJson) {
-                  const jsonMatch = rawJson.match(/\\{[\\s\\S]*\\}/);
-                  const cleanedJson = jsonMatch ? jsonMatch[0] : rawJson.replace(/\`\`\`json/gi, '').replace(/\`\`\`/g, '').trim();
+                  const jsonMatch = rawJson.match(/\{[\s\S]*\}/);
+                  const cleanedJson = jsonMatch ? jsonMatch[0] : rawJson.replace(/```json/gi, '').replace(/```/g, '').trim();
                   const parsedOrig = JSON.parse(cleanedJson);
                   const segments = parsedOrig.segments || [];
                   const totalSegs = segments.length;
@@ -1814,7 +1814,7 @@ const App = () => {
     if (completed.length === 0) return;
     setIsGeneratingSummary(true); 
     try {
-      const res = await callGeminiWithRetry(FALLBACK_MODEL_ORDER[0].id, { contents: [{ parts: [{ text: \`請總結全班作文表現。份數：\${completed.length}。題目：\${essayTopic}\` }] }] });
+      const res = await callGeminiWithRetry(FALLBACK_MODEL_ORDER[0].id, { contents: [{ parts: [{ text: `請總結全班作文表現。份數：${completed.length}。題目：${essayTopic}` }] }] });
       setClassAnalysis(res.candidates?.[0]?.content?.parts?.[0]?.text || "");
     } catch (e) { console.error(e); } finally { setIsGeneratingSummary(false); }
   };
@@ -1833,7 +1833,7 @@ const App = () => {
       canvas.height = viewport.height; canvas.width = viewport.width;
       await page.render({ canvasContext: context, viewport: viewport }).promise;
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-      images.push(new File([blob], \`\${file.name}-page-\${i}.png\`, { type: 'image/png' }));
+      images.push(new File([blob], `${file.name}-page-${i}.png`, { type: 'image/png' }));
     }
     return images;
   };
@@ -1851,13 +1851,13 @@ const App = () => {
     const zip = await window.JSZip.loadAsync(file);
     let fullText = "";
     const slideFiles = Object.keys(zip.files).filter(name => name.startsWith("ppt/slides/slide") && name.endsWith(".xml"));
-    slideFiles.sort((a, b) => parseInt(a.match(/slide(\\d+)\\.xml/)[1]) - parseInt(b.match(/slide(\\d+)\\.xml/)[1]));
+    slideFiles.sort((a, b) => parseInt(a.match(/slide(\d+)\.xml/)[1]) - parseInt(b.match(/slide(\d+)\.xml/)[1]));
     for (const slidePath of slideFiles) {
         const slideXml = await zip.file(slidePath).async("string");
         const parser = new DOMParser(); const xmlDoc = parser.parseFromString(slideXml, "text/xml");
         const texts = xmlDoc.getElementsByTagName("a:t");
-        for (let i = 0; i < texts.length; i++) { fullText += texts[i].textContent + "\\n"; }
-        fullText += "\\n---\\n";
+        for (let i = 0; i < texts.length; i++) { fullText += texts[i].textContent + "\n"; }
+        fullText += "\n---\n";
     }
     if (!fullText.trim()) fullText = "(無法提取文字或內容為純圖片)";
     const imageFile = await renderTextToImage(fullText, file.name);
@@ -1874,18 +1874,18 @@ const App = () => {
       for (const file of filesArray) {
         let processedImages = [];
         if (file.type === "application/pdf") {
-          showToast(\`正在解析 PDF: \${file.name}...\`);
+          showToast(`正在解析 PDF: ${file.name}...`);
           processedImages = await convertPdfToImages(file);
         } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-          showToast(\`正在解析 Word: \${file.name}...\`);
+          showToast(`正在解析 Word: ${file.name}...`);
           processedImages = await convertDocxToImages(file);
         } else if (file.type === "application/vnd.openxmlformats-officedocument.presentationml.presentation") {
-          showToast(\`正在解析 PowerPoint: \${file.name}...\`);
+          showToast(`正在解析 PowerPoint: ${file.name}...`);
           processedImages = await convertPptxToImages(file);
         } else if (file.type.startsWith("image/")) {
           processedImages = [file];
         } else {
-          showToast(\`不支援的檔案格式: \${file.name}\`, 'error');
+          showToast(`不支援的檔案格式: ${file.name}`, 'error');
           continue;
         }
 
@@ -1893,7 +1893,7 @@ const App = () => {
         let groupingId = nameWithoutExt;
         let pageOffset = 0;
 
-        const pageMatch = nameWithoutExt.match(/^(.*)[-_](\\d+)$/);
+        const pageMatch = nameWithoutExt.match(/^(.*)[-_](\d+)$/);
         if (pageMatch) {
             groupingId = pageMatch[1];
             pageOffset = parseInt(pageMatch[2], 10);
@@ -1924,12 +1924,12 @@ const App = () => {
          let studentName = rawName;
          let studentNumber = "";
          
-         const prefixMatch = rawName.match(/^(\\d+)[\\s_\\-.]+(.*)$/);
+         const prefixMatch = rawName.match(/^(\d+)[\s_\-.]+(.*)$/);
          if (prefixMatch) {
             studentNumber = prefixMatch[1]; 
             studentName = prefixMatch[2]; 
          } else {
-            const suffixMatch = rawName.match(/^(.*?)[\\s_\\-.]?(\\d+)$/);
+            const suffixMatch = rawName.match(/^(.*?)[\s_\-.]?(\d+)$/);
             if (suffixMatch) {
                 studentName = suffixMatch[1];
                 studentNumber = suffixMatch[2];
@@ -1947,7 +1947,7 @@ const App = () => {
       });
 
       setEssays(prev => [...prev, ...newEssays]);
-      showToast(\`成功載入 \${newEssays.length} 份作業\`);
+      showToast(`成功載入 ${newEssays.length} 份作業`);
 
     } catch (e) { console.error(e); showToast("檔案解析失敗: " + e.message, 'error'); } 
     finally { setIsLoadingFile(false); }
@@ -2033,7 +2033,7 @@ const App = () => {
                   </button>
                 ) : (
                   <>
-                    <button onClick={startBatch} disabled={essays.length === 0} className={\`w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black text-lg py-4 rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.02] disabled:from-slate-300 disabled:to-slate-400 disabled:shadow-none disabled:hover:scale-100 flex items-center justify-center gap-2 transition-all active:scale-95 \${essays.filter(e => e.status !== 'completed').length > 0 ? 'animate-pulse' : ''}\`}>
+                    <button onClick={startBatch} disabled={essays.length === 0} className={`w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black text-lg py-4 rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.02] disabled:from-slate-300 disabled:to-slate-400 disabled:shadow-none disabled:hover:scale-100 flex items-center justify-center gap-2 transition-all active:scale-95 ${essays.filter(e => e.status !== 'completed').length > 0 ? 'animate-pulse' : ''}`}>
                       <PlayCircle size={24} /> <span>啟動全體批改</span>
                     </button>
                     <button onClick={handleRegradeClick} disabled={essays.length === 0} className="w-full bg-orange-50 text-orange-600 font-bold py-3 rounded-xl border border-orange-200 hover:bg-orange-100 transition-all text-sm flex items-center justify-center gap-2">
@@ -2150,7 +2150,7 @@ const App = () => {
             onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={e => { e.preventDefault(); setIsDragging(false); handleFiles(e.dataTransfer.files); }}
-            className={\`group border-2 border-dashed p-12 rounded-[2rem] text-center cursor-pointer transition-all duration-300 relative \${isDragging ? 'border-indigo-600 bg-indigo-50/50 scale-[0.99]' : 'border-slate-200 bg-white hover:bg-indigo-50/50'}\`}
+            className={`group border-2 border-dashed p-12 rounded-[2rem] text-center cursor-pointer transition-all duration-300 relative ${isDragging ? 'border-indigo-600 bg-indigo-50/50 scale-[0.99]' : 'border-slate-200 bg-white hover:bg-indigo-50/50'}`}
           >
             {isLoadingFile ? (
                <div className="flex flex-col items-center justify-center gap-4">
@@ -2209,7 +2209,7 @@ const App = () => {
                             <Hash size={14} className="text-slate-400" />
                             <input value={essay.studentNumber} onChange={(e) => setEssays(prev => prev.map(ev => ev.id === essay.id ? { ...ev, studentNumber: e.target.value } : ev))} className="font-bold outline-none bg-transparent w-12 text-slate-700 text-sm" placeholder="座號" />
                         </div>
-                        <div className={\`text-sm font-black flex items-center px-2 py-1 rounded-lg \${info.color} bg-opacity-10\`}>{info.label}</div>
+                        <div className={`text-sm font-black flex items-center px-2 py-1 rounded-lg ${info.color} bg-opacity-10`}>{info.label}</div>
                         {essay.evaluatedType && (
                             <div className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-lg border border-slate-200 flex items-center gap-1">
                                 {essay.evaluatedType.includes("自然") ? <Microscope size={12}/> : <Landmark size={12}/>}
@@ -2218,7 +2218,7 @@ const App = () => {
                         )}
                         {/* Originality Risk Badges (Preview) */}
                         {essay.originality && (essay.originality.aiRatio >= 20) && (
-                             <div className={\`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs font-bold border \${essay.originality.aiRatio >= 40 ? 'bg-red-100 text-red-600 border-red-200' : 'bg-orange-100 text-orange-600 border-orange-200'}\`} title={\`AI 比例: \${essay.originality.aiRatio}%\`}>
+                             <div className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs font-bold border ${essay.originality.aiRatio >= 40 ? 'bg-red-100 text-red-600 border-red-200' : 'bg-orange-100 text-orange-600 border-orange-200'}`} title={`AI 比例: ${essay.originality.aiRatio}%`}>
                                  <ShieldAlert size={12} />
                                  <span>AI: {essay.originality.aiRatio}%</span>
                              </div>
@@ -2252,10 +2252,10 @@ const App = () => {
                                 <span className="text-indigo-600">{ds.score}/{ds.total > 0 ? ds.total : 10}</span>
                               </div>
                               <div className="relative h-3 w-full rounded-full bg-slate-50 border border-slate-400 cursor-pointer shadow-sm">
-                                <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-full transition-all duration-300" style={{ width: \`\${Math.min(100, ds.total > 0 ? (ds.score / ds.total) * 100 : 0)}%\` }}>
+                                <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-full transition-all duration-300" style={{ width: `${Math.min(100, ds.total > 0 ? (ds.score / ds.total) * 100 : 0)}%` }}>
                                     <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1.5 w-4 h-4 bg-white border-2 border-indigo-600 rounded-full shadow-sm z-10" />
                                 </div>
-                                <input type="range" min="0" max={ds.total > 0 ? ds.total : 10} value={ds.score} onChange={(e) => handleScoreChange(essay.id, idx, e.target.value)} className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-20" title={\`調整分數: \${ds.score}\`} />
+                                <input type="range" min="0" max={ds.total > 0 ? ds.total : 10} value={ds.score} onChange={(e) => handleScoreChange(essay.id, idx, e.target.value)} className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-20" title={`調整分數: ${ds.score}`} />
                               </div>
                             </div>
                           ))}
@@ -2271,9 +2271,9 @@ const App = () => {
                                  
                                  {/* Progress Bar Container */}
                                  <div className="h-4 w-full flex rounded-full overflow-hidden border border-slate-200">
-                                     {essay.originality.aiRatio > 0 && <div style={{width: \`\${essay.originality.aiRatio}%\`}} className="bg-rose-500 h-full" title={\`AI: \${essay.originality.aiRatio}%\`} />}
-                                     {essay.originality.copyRatio > 0 && <div style={{width: \`\${essay.originality.copyRatio}%\`}} className="bg-amber-500 h-full" title={\`抄襲: \${essay.originality.copyRatio}%\`} />}
-                                     {essay.originality.originalRatio > 0 && <div style={{width: \`\${essay.originality.originalRatio}%\`}} className="bg-emerald-500 h-full" title={\`原創: \${essay.originality.originalRatio}%\`} />}
+                                     {essay.originality.aiRatio > 0 && <div style={{width: `${essay.originality.aiRatio}%`}} className="bg-rose-500 h-full" title={`AI: ${essay.originality.aiRatio}%`} />}
+                                     {essay.originality.copyRatio > 0 && <div style={{width: `${essay.originality.copyRatio}%`}} className="bg-amber-500 h-full" title={`抄襲: ${essay.originality.copyRatio}%`} />}
+                                     {essay.originality.originalRatio > 0 && <div style={{width: `${essay.originality.originalRatio}%`}} className="bg-emerald-500 h-full" title={`原創: ${essay.originality.originalRatio}%`} />}
                                  </div>
                                  
                                  {/* Legend & Stats */}
@@ -2309,7 +2309,7 @@ const App = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className={\`h-32 flex items-center justify-center border-2 border-dashed rounded-2xl text-xs font-bold \${essay.status === 'error' ? 'border-rose-100 bg-rose-50 text-rose-500' : 'border-slate-100 text-slate-300'}\`}>
+                      <div className={`h-32 flex items-center justify-center border-2 border-dashed rounded-2xl text-xs font-bold ${essay.status === 'error' ? 'border-rose-100 bg-rose-50 text-rose-500' : 'border-slate-100 text-slate-300'}`}>
                         {essay.status === 'processing' ? <Loader2 className="animate-spin text-indigo-500" size={24} /> : 
                          essay.status === 'error' ? 
                          <div className="flex flex-col items-center gap-2">
@@ -2437,13 +2437,13 @@ const App = () => {
 
       {toast && <Toast message={toast.msg} type={toast.type} action={toast.action} onClose={() => setToast(null)} />}
       
-      <style dangerouslySetInnerHTML={{ __html: \`
+      <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap');
         .font-serif { font-family: 'Noto Serif TC', serif; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-      \`}} />
+      `}} />
     </div>
   );
 };
