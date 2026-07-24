@@ -1954,9 +1954,9 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-50 via-slate-50 to-purple-50 text-slate-900 pb-20 font-sans">
-      <nav className="bg-white/60 backdrop-blur-xl border-b border-white/40 sticky top-0 z-40 px-6 h-16 flex items-center justify-between shadow-sm">
-        <div className="flex items-center space-x-2 text-indigo-600">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 text-slate-800 pb-20 font-sans selection:bg-indigo-200 selection:text-indigo-900">
+      <nav className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-40 px-6 h-16 flex items-center justify-between shadow-sm">
+        <div className="flex items-center space-x-2 text-indigo-700">
           <FileSpreadsheet className="bg-indigo-600 p-1.5 rounded-lg text-white" />
           <h1 className="text-xl font-black">AI 文本批改助手 <span className="text-slate-300 font-light">V15.0</span></h1>
         </div>
@@ -1978,7 +1978,7 @@ const App = () => {
 
       <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
         <aside className="lg:col-span-1 space-y-6">
-          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6 lg:sticky lg:top-24 h-fit max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar pr-2">
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 space-y-6 lg:sticky lg:top-24 h-fit max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar pr-2">
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Gemini API Key</label>
               <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border rounded-2xl outline-none" placeholder="Enter API Key" />
@@ -2150,7 +2150,7 @@ const App = () => {
             onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={e => { e.preventDefault(); setIsDragging(false); handleFiles(e.dataTransfer.files); }}
-            className={`group border-2 border-dashed p-12 rounded-[2rem] text-center cursor-pointer transition-all duration-300 relative ${isDragging ? 'border-indigo-600 bg-indigo-50/80 scale-[0.99] shadow-inner' : 'border-indigo-200/60 bg-white/60 backdrop-blur-sm hover:border-indigo-300 hover:bg-white/90 hover:shadow-xl hover:-translate-y-1'}`}
+            className={`group border-2 border-dashed p-12 rounded-[2rem] text-center cursor-pointer transition-all duration-300 relative ${isDragging ? 'border-indigo-500 bg-indigo-50 scale-[0.99] shadow-inner' : 'border-slate-300 bg-slate-50 hover:border-indigo-400 hover:bg-white hover:shadow-xl hover:-translate-y-1'}`}
           >
             {isLoadingFile ? (
                <div className="flex flex-col items-center justify-center gap-4">
@@ -2184,7 +2184,7 @@ const App = () => {
             {essays.map(essay => {
               const info = getGradeInfo(essay.score);
               return (
-                <div key={essay.id} className="bg-white/90 backdrop-blur-sm p-6 rounded-3xl border border-white shadow-lg shadow-indigo-100/20 flex flex-col md:flex-row gap-6 hover:shadow-xl hover:border-indigo-200 hover:-translate-y-1 transition-all duration-300">
+                <div key={essay.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col md:flex-row gap-6 hover:shadow-2xl hover:shadow-indigo-100 hover:border-indigo-300 hover:-translate-y-1 transition-all duration-300">
                   <div className="md:w-32 flex flex-col gap-2">
                     <div className="aspect-[3/4] bg-slate-100 rounded-xl overflow-hidden border relative group cursor-pointer" onClick={() => setViewingImage(essay.images[0].preview)}>
                       <img src={essay.images[0].preview} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Essay" />
@@ -2294,17 +2294,17 @@ const App = () => {
                         )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                          <div className="bg-emerald-50 p-5 rounded-2xl border border-emerald-100 shadow-sm relative group/edit">
-                            <h5 className="text-xs font-black text-emerald-700 mb-3 uppercase tracking-widest flex items-center gap-2">
+                          <div className="bg-emerald-50/60 p-5 rounded-2xl border border-emerald-200/80 shadow-inner relative group/edit">
+                            <h5 className="text-xs font-black text-emerald-800 mb-3 uppercase tracking-widest flex items-center gap-2">
                               ✨ 亮點 <Pencil size={12} className="opacity-0 group-hover/edit:opacity-50 transition-opacity" />
                             </h5>
-                            <textarea value={essay.highlights} onChange={(e) => handleTextChange(essay.id, 'highlights', e.target.value)} className="w-full bg-transparent border-none p-0 text-sm text-slate-700 leading-relaxed focus:ring-0 resize-none h-32 custom-scrollbar" />
+                            <textarea value={essay.highlights} onChange={(e) => handleTextChange(essay.id, 'highlights', e.target.value)} className="w-full bg-transparent border-none p-0 text-sm text-slate-800 font-medium leading-relaxed focus:ring-0 resize-none h-32 custom-scrollbar" />
                           </div>
-                          <div className="bg-amber-50 p-5 rounded-2xl border border-amber-100 shadow-sm relative group/edit">
-                            <h5 className="text-xs font-black text-amber-700 mb-3 uppercase tracking-widest flex items-center gap-2">
+                          <div className="bg-amber-50/60 p-5 rounded-2xl border border-amber-200/80 shadow-inner relative group/edit">
+                            <h5 className="text-xs font-black text-amber-800 mb-3 uppercase tracking-widest flex items-center gap-2">
                               💡 這樣寫會更好 <Pencil size={12} className="opacity-0 group-hover/edit:opacity-50 transition-opacity" />
                             </h5>
-                            <textarea value={essay.suggestions} onChange={(e) => handleTextChange(essay.id, 'suggestions', e.target.value)} className="w-full bg-transparent border-none p-0 text-sm text-slate-700 leading-relaxed focus:ring-0 resize-none h-32 custom-scrollbar" />
+                            <textarea value={essay.suggestions} onChange={(e) => handleTextChange(essay.id, 'suggestions', e.target.value)} className="w-full bg-transparent border-none p-0 text-sm text-slate-800 font-medium leading-relaxed focus:ring-0 resize-none h-32 custom-scrollbar" />
                           </div>
                         </div>
                       </div>
