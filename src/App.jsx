@@ -668,12 +668,12 @@ const ImageViewer = ({ src, onClose }) => {
 const generateMedalSVG = (c1, c2, label) => `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g${label}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient><filter id="s"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.3"/></filter></defs><circle cx="50" cy="50" r="42" fill="url(%23g${label})" stroke="%23ffffff" stroke-width="3" filter="url(%23s)"/><text x="50" y="56" font-size="24" font-family="sans-serif" font-weight="bold" fill="white" text-anchor="middle">${label}</text></svg>`;
 
 const DEFAULT_MEDALS = {
-  grand: generateMedalSVG('%238b5cf6', '%23c084fc', '特優'),
-  merit: generateMedalSVG('%23f43f5e', '%23fb7185', '優等'),
-  gold: generateMedalSVG('%23eab308', '%23fde047', '金獎'),
-  silver: generateMedalSVG('%2394a3b8', '%23cbd5e1', '銀獎'),
-  good: generateMedalSVG('%23f97316', '%23fdba74', '佳作'),
-  pass: generateMedalSVG('%233b82f6', '%2393c5fd', '普獎')
+  grand: import.meta.env.BASE_URL + 'medals/grand.png',
+  merit: import.meta.env.BASE_URL + 'medals/merit.png',
+  gold: import.meta.env.BASE_URL + 'medals/gold.png',
+  silver: import.meta.env.BASE_URL + 'medals/silver.png',
+  good: import.meta.env.BASE_URL + 'medals/good.png',
+  pass: import.meta.env.BASE_URL + 'medals/pass.png'
 };
 
 const App = () => {
