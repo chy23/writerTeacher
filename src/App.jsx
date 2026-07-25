@@ -68,7 +68,7 @@ import {
   ShieldCheck, 
   ToggleLeft, 
   ToggleRight, 
-  Maximize2 
+  Maximize2
 } from 'lucide-react';
 
 // --- 1. 常數設定 (Constants - Refined based on 108 Curriculum) ---
@@ -688,6 +688,7 @@ const App = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [toast, setToast] = useState(null);
   const [classAnalysis, setClassAnalysis] = useState('');
@@ -1764,7 +1765,10 @@ const App = () => {
   };
 
   const startBatchInternal = async (targets) => {
-      if (!apiKey) return showToast("請輸入 API Key", "error");
+      if (!apiKey) {
+          setShowApiKeyModal(true);
+          return;
+      }
       setIsProcessing(true); 
       stopRef.current = false;
       abortControllerRef.current = new AbortController();
@@ -2442,6 +2446,33 @@ const App = () => {
                 </button>
                 <button onClick={performClearAll} className="py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold transition-colors shadow-lg shadow-rose-200">
                   確定清空
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showApiKeyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowApiKeyModal(false)}>
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl transform scale-100 animate-in zoom-in-95 duration-300 border-2 border-indigo-100" onClick={e => e.stopPropagation()}>
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-50 mb-6">
+                <AlertCircle size={32} className="text-indigo-600" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-800 mb-2">需要 API Key</h3>
+              <p className="text-slate-600 mb-6 text-sm leading-relaxed text-left">
+                系統需要 Google Gemini API Key 才能閱讀與批改文章。<br/><br/>
+                <span className="font-bold text-rose-600">⚠️ 費用提醒：</span><br/>
+                Gemini API 目前提供一定的免費額度，但若用量大或綁定信用卡，可能會產生費用，請務必留意官方計費標準。
+              </p>
+              
+              <div className="grid grid-cols-1 gap-3">
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition-colors shadow-lg shadow-indigo-200 block">
+                  前往申請 API Key
+                </a>
+                <button onClick={() => setShowApiKeyModal(false)} className="py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-colors">
+                  我知道了
                 </button>
               </div>
             </div>
