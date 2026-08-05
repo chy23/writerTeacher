@@ -68,8 +68,12 @@ import {
   ShieldCheck, 
   ToggleLeft, 
   ToggleRight, 
-  Maximize2
+  Maximize2,
+  Crop,
+  Users,
+  TrendingUp
 } from 'lucide-react';
+import ImagePreProcessor from './ImagePreProcessor';
 
 // --- 1. 常數設定 (Constants - Refined based on 108 Curriculum) ---
 
@@ -699,6 +703,10 @@ const App = () => {
   const [toast, setToast] = useState(null);
   const [classAnalysis, setClassAnalysis] = useState('');
   const [showChangelog, setShowChangelog] = useState(false);
+  const [preProcessingEssayId, setPreProcessingEssayId] = useState(null);
+  const [classRoster, setClassRoster] = useState({});
+  const [showRosterModal, setShowRosterModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
   const [customMedals, setCustomMedals] = useState(DEFAULT_MEDALS);
   const [batchResult, setBatchResult] = useState(null);
   const [showRegradeConfirm, setShowRegradeConfirm] = useState(false);
@@ -728,19 +736,36 @@ const App = () => {
 
   // Persistence Logic
   useEffect(() => {
-    const checkRecovery = async () => {
-        try {
-            const savedState = await loadFromDB('currentState');
-            if (savedState && savedState.essays && savedState.essays.length > 0) {
-                setToast({ 
-                    msg: "發現未完成的批改紀錄", 
-                    type: "info",
-                    action: { label: "還原", onClick: () => restoreState(savedState) }
-                });
-            }
-        } catch (e) { console.error("DB Error", e); }
+    const init = async () => {
+      try {
+        const data = await loadFromDB('currentState');
+        if (data) {
+          if (data.gradeLevel) setGradeLevel(data.gradeLevel);
+          if (data.textTypeId) setTextTypeId(data.textTypeId);
+          if (data.gradingDate) setGradingDate(data.gradingDate);
+          if (data.essayTopic) setEssayTopic(data.essayTopic);
+          if (data.classAnalysis) setClassAnalysis(data.classAnalysis);
+          if (data.essays) {
+            const restoredEssays = data.essays.map(e => ({
+              ...e,
+              images: e.images.map(img => ({
+                ...img,
+                preview: img.file ? URL.createObjectURL(img.file) : null
+              }))
+            }));
+            setEssays(restoredEssays);
+          }
+        }
+        const savedMedals = await loadFromDB('customMedals');
+        if (savedMedals) setCustomMedals(savedMedals);
+        
+        const savedRoster = await loadFromDB('classRoster');
+        if (savedRoster) setClassRoster(savedRoster);
+      } catch (e) {
+        console.warn("Failed to load from IndexedDB", e);
+      }
     };
-    checkRecovery();
+    init();
   }, []);
 
   useEffect(() => {
@@ -753,59 +778,36 @@ const App = () => {
     return () => clearTimeout(save);
   }, [essays, gradeLevel, textTypeId, gradingDate, essayTopic, classAnalysis]);
 
-  // Persistence for Custom Medals - Using IndexedDB
+  // Auto-save completed essays to Class Roster
   useEffect(() => {
-    const saveMedals = async () => {
-         const hasCustom = Object.values(customMedals).some(v => v !== null);
-         if (hasCustom) {
-             try {
-                 await saveToDB('customMedals', customMedals);
-             } catch (e) {
-                 console.error("Failed to save medals to DB", e);
-             }
-         }
-    };
-    saveMedals();
-  }, [customMedals]);
-
-  const restoreState = (savedState) => {
-      setGradeLevel(savedState.gradeLevel);
-      setTextTypeId(savedState.textTypeId);
-      setGradingDate(savedState.gradingDate);
-      setEssayTopic(savedState.essayTopic);
-      setClassAnalysis(savedState.classAnalysis || '');
-      const restoredEssays = savedState.essays.map(e => ({
-          ...e,
-          images: e.images.map(img => ({ ...img, preview: URL.createObjectURL(img.file) }))
-      }));
-      setEssays(restoredEssays);
-      setToast(null);
-  };
-
-  // Load custom medals from IndexedDB on startup
-  useEffect(() => {
-    const loadMedals = async () => {
-        try {
-            const saved = await loadFromDB('customMedals');
-            if (saved) {
-                const merged = { ...DEFAULT_MEDALS };
-                for (const key in saved) { if (saved[key]) merged[key] = saved[key]; }
-                setCustomMedals(merged);
-            } else {
-                 const legacy = localStorage.getItem('essay_grader_medals');
-                 if (legacy) { 
-                     try { 
-                         const legacyParsed = JSON.parse(legacy);
-                         const merged = { ...DEFAULT_MEDALS };
-                         for (const key in legacyParsed) { if (legacyParsed[key]) merged[key] = legacyParsed[key]; }
-                         setCustomMedals(merged); 
-                     } catch (e) { console.error(e); } 
-                 }
-            }
-        } catch (e) { console.error("Error loading medals", e); }
-    };
-    loadMedals();
-  }, []);
+    const completed = essays.filter(e => e.status === 'completed' && (e.studentName || e.studentNumber));
+    if (completed.length > 0) {
+      setClassRoster(prev => {
+        let updated = { ...prev };
+        let changed = false;
+        completed.forEach(essay => {
+          const key = `${essay.studentName || '未命名'}_${essay.studentNumber || ''}`;
+          if (!updated[key]) updated[key] = [];
+          if (!updated[key].find(e => e.id === essay.id)) {
+            updated[key] = [...updated[key], {
+              id: essay.id,
+              date: gradingDate,
+              topic: essayTopic,
+              score: essay.score,
+              highlights: essay.highlights,
+              suggestions: essay.suggestions
+            }];
+            changed = true;
+          }
+        });
+        if (changed) {
+          saveToDB('classRoster', updated);
+          return updated;
+        }
+        return prev;
+      });
+    }
+  }, [essays, gradingDate, essayTopic]);
 
   const showToast = (msg, type = 'info', action = null) => {
     setToast({ msg: String(msg), type, action });
@@ -2230,6 +2232,11 @@ const App = () => {
                           <Maximize2 className="text-white opacity-0 group-hover:opacity-100 drop-shadow-md" size={24} />
                       </div>
                       <div className="absolute bottom-1 right-1 bg-black/50 text-white text-[8px] px-1 rounded">P.1</div>
+                      {essay.status === 'pending' && essay.images[0].file.type.startsWith('image/') && (
+                        <button onClick={(e) => { e.stopPropagation(); setPreProcessingEssayId(essay.id); }} className="absolute bottom-2 left-2 p-1.5 bg-indigo-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-indigo-600 shadow-md">
+                          <Crop size={14}/>
+                        </button>
+                      )}
                       <button onClick={(e) => { e.stopPropagation(); setEssays(prev => prev.filter(e => e.id !== essay.id)); }} className="absolute top-2 right-2 p-1.5 bg-rose-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-600"><Trash2 size={14}/></button>
                     </div>
                     {essay.images.length > 1 && (
@@ -2496,6 +2503,99 @@ const App = () => {
                 <ul className="space-y-1">{log.content.map((c, j) => <li key={j} className="text-sm text-slate-600 leading-relaxed">• {c}</li>)}</ul>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {preProcessingEssayId && (
+        <ImagePreProcessor 
+          file={essays.find(e => e.id === preProcessingEssayId)?.images[0]?.file}
+          onCancel={() => setPreProcessingEssayId(null)}
+          onComplete={async (processedFile) => {
+            const previewUrl = URL.createObjectURL(processedFile);
+            setEssays(prev => prev.map(e => {
+              if (e.id === preProcessingEssayId) {
+                return {
+                  ...e,
+                  images: [{ ...e.images[0], file: processedFile, preview: previewUrl }]
+                };
+              }
+              return e;
+            }));
+            setPreProcessingEssayId(null);
+          }}
+        />
+      )}
+
+      {showRosterModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => { setShowRosterModal(false); setSelectedStudent(null); }}>
+          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-4xl w-full h-[80vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-black text-slate-800 flex items-center gap-2"><Users className="text-indigo-600" /> 學生長期成績資料庫</h3>
+              <button onClick={() => { setShowRosterModal(false); setSelectedStudent(null); }} className="p-2 bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-xl transition-colors"><X size={20}/></button>
+            </div>
+            
+            <div className="flex flex-col md:flex-row gap-6 flex-1 min-h-0">
+              {/* Student List */}
+              <div className="w-full md:w-1/3 border-r border-slate-100 pr-0 md:pr-4 overflow-y-auto flex flex-col gap-2">
+                {Object.keys(classRoster).length === 0 ? (
+                  <p className="text-slate-400 text-sm p-4 text-center">目前還沒有任何學生成績紀錄。批改完成的作文會自動歸檔於此。</p>
+                ) : (
+                  Object.keys(classRoster).sort().map(key => {
+                    const [name, num] = key.split('_');
+                    const isSelected = selectedStudent === key;
+                    const records = classRoster[key];
+                    return (
+                      <div key={key} onClick={() => setSelectedStudent(key)} className={`p-4 rounded-2xl cursor-pointer transition-all border ${isSelected ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-white border-slate-100 hover:bg-slate-50 hover:border-slate-200'}`}>
+                        <div className="flex justify-between items-center">
+                          <span className={`font-black ${isSelected ? 'text-indigo-700' : 'text-slate-700'}`}>{num ? `${num}號 ` : ''}{name}</span>
+                          <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded-lg">{records.length} 篇</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              
+              {/* Student Details */}
+              <div className="w-full md:w-2/3 overflow-y-auto pl-0 md:pl-2">
+                {!selectedStudent ? (
+                  <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50">
+                    <User size={64} className="mb-4" />
+                    <p className="font-bold">請選擇左側學生以查看成績歷史</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <h4 className="text-xl font-black text-slate-700 border-b pb-4">{selectedStudent.replace('_', ' / ')} 的學習軌跡</h4>
+                    {classRoster[selectedStudent].sort((a,b) => new Date(b.date) - new Date(a.date)).map((record, idx) => (
+                      <div key={idx} className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="text-xs font-bold text-slate-400 mb-1">{record.date}</div>
+                            <div className="font-black text-slate-700 text-lg">{record.topic}</div>
+                          </div>
+                          <div className="text-2xl font-black text-indigo-600 bg-white px-3 py-1 rounded-xl shadow-sm border border-indigo-50">{record.score}</div>
+                        </div>
+                        <div className="space-y-3 mt-4">
+                          {record.highlights && (
+                            <div className="bg-emerald-50/50 p-3 rounded-xl">
+                              <div className="text-xs font-bold text-emerald-600 mb-1 flex items-center gap-1"><Star size={12}/> 優點</div>
+                              <p className="text-sm text-slate-600 leading-relaxed">{record.highlights}</p>
+                            </div>
+                          )}
+                          {record.suggestions && (
+                            <div className="bg-rose-50/50 p-3 rounded-xl">
+                              <div className="text-xs font-bold text-rose-600 mb-1 flex items-center gap-1"><TrendingUp size={12}/> 建議</div>
+                              <p className="text-sm text-slate-600 leading-relaxed">{record.suggestions}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
