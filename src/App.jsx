@@ -2497,6 +2497,14 @@ const App = () => {
 
       {toast && <Toast message={toast.msg} type={toast.type} action={toast.action} onClose={() => setToast(null)} />}
       
+      {/* 浮水印 */}
+      <div className="fixed top-24 right-6 text-[18pt] opacity-25 text-slate-500 font-black pointer-events-none z-30 select-none" style={{ fontFamily: "'Noto Serif TC', serif" }}>
+        網站建立自楊家驊老師
+      </div>
+      <div className="fixed bottom-4 right-6 text-[18pt] opacity-25 text-slate-500 font-black pointer-events-none z-30 select-none" style={{ fontFamily: "'Noto Serif TC', serif" }}>
+        網站建立自楊家驊老師
+      </div>
+
       <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap');
         .font-serif { font-family: 'Noto Serif TC', serif; }
