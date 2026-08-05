@@ -679,6 +679,11 @@ const DEFAULT_MEDALS = {
 };
 
 const App = () => {
+  // 網站建立自楊家驊老師 The website was created by Teacher ChiahuaYang
+  useEffect(() => {
+    console.log("%c網站建立自楊家驊老師 The website was created by Teacher ChiahuaYang", "color: #4f46e5; font-size: 14px; font-weight: bold;");
+  }, []);
+  
   const [apiKey, setApiKey] = useState('');
   const [gradeLevel, setGradeLevel] = useState(GRADE_LEVELS[2]); // Default to 5-6th grade
   const [textTypeId, setTextTypeId] = useState(TEXT_TYPES[0].id); // Default to Auto
