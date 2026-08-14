@@ -321,6 +321,14 @@ const POETRY_PROGRESS = {
 };
 
 // CHANGELOG is now dynamically imported from changelog.json
+// Legacy changelog for historical entries before automation
+const LEGACY_CHANGELOG = [
+  { version: "V15.0.2", date: "2026-07-25", isBugFix: true, title: "修正原創性檢測服務 API 呼叫錯誤", details: ["增強 JSON 解析穩定度"] },
+  { version: "V15.0.1", date: "2026-07-24", isBugFix: true, title: "增強 AI 評分表的解析能力", details: ["解決因格式不穩定導致的錯誤"] },
+  { version: "V15.0.0", date: "2026-07-24", isBugFix: false, title: "重大架構更新與 UI 優化", details: ["採用雙階段 API 呼叫，原創性分析全面升級", "原創性結果以直觀的百分比進度條呈現"] },
+  { version: "V14.0.0", date: "2026-07-23", isBugFix: false, title: "UI 全面優化與新功能", details: ["分數條增加黑色實線外框", "新增：圖片瀏覽器功能"] },
+  { version: "V13.23.0", date: "2026-07-23", isBugFix: false, title: "強化分數條外框", details: ["確保黑白列印清晰可見"] },
+];
 
 // --- 2. 輔助函式 (Helpers) ---
 
@@ -2492,11 +2500,11 @@ const App = () => {
               <button onClick={() => setShowChangelog(false)} className="p-2 bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-xl transition-colors"><X size={20}/></button>
             </div>
             
-            {changelogData.length === 0 ? (
+            {changelogData.length === 0 && LEGACY_CHANGELOG.length === 0 ? (
               <p className="text-slate-500 text-center py-8">目前沒有紀錄</p>
             ) : (
               <div className="space-y-6">
-                {changelogData.map((log, i) => (
+                {[...changelogData, ...LEGACY_CHANGELOG].map((log, i) => (
                   <div key={i} className={`p-5 rounded-2xl border ${log.isBugFix ? 'bg-orange-50/50 border-orange-100' : 'bg-slate-50/50 border-slate-100'}`}>
                     <div className="flex flex-wrap items-center gap-3 mb-3">
                       <span className="text-sm font-black text-indigo-600 bg-indigo-100 px-3 py-1 rounded-lg">版號: {log.version}</span>
