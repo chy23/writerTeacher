@@ -1,170 +1,233 @@
 [
   {
+    "version": "#464d29b",
+    "date": "2026-08-14",
+    "title": "UI：更新日誌全面中文化",
+    "details": [
+      "內建英翻中對照表，將所有過去的英文更新紀錄自動轉為繁體中文顯示",
+      "確立未來所有的系統更新紀錄將全面以繁體中文撰寫"
+    ],
+    "isBugFix": false
+  },
+  {
     "version": "#9359033",
     "date": "2026-08-14",
     "title": "修復：修正自動部署的 Git 歷史抓取限制並恢復舊版日誌",
-    "details": [],
+    "details": [
+      "修正 GitHub Actions 預設只抓取單筆紀錄的問題，確保歷史日誌完整性",
+      "將 V15 以前的手動更新紀錄重新合併至系統中"
+    ],
     "isBugFix": true
   },
   {
     "version": "#3c92402",
     "date": "2026-08-14",
     "title": "優化：解除日誌抓取筆數限制，完整呈現歷史紀錄",
-    "details": [],
+    "details": [
+      "移除「僅顯示近50筆」的限制，確保未來數百筆更新皆能完整呈現"
+    ],
     "isBugFix": false
   },
   {
     "version": "#294a3ab",
     "date": "2026-08-14",
     "title": "功能：新增自動從 Git 歷史產生更新日誌的功能",
-    "details": [],
+    "details": [
+      "撰寫自動化腳本，每次部署時自動抓取 Git 歷史轉換為 JSON",
+      "重新設計日誌對話窗介面，新增版本號、日期與 Bug 標示"
+    ],
     "isBugFix": false
   },
   {
     "version": "#f4ac569",
     "date": "2026-08-14",
     "title": "優化：更新 AI 模型備援順序",
-    "details": [],
+    "details": [
+      "將最新模型依序設定為：3.5-flash、3.6-flash、3.7-flash、3.1-pro"
+    ],
     "isBugFix": false
   },
   {
     "version": "#3253a1e",
     "date": "2026-08-06",
     "title": "優化：更新日誌加入確切日期",
-    "details": [],
+    "details": [
+      "為原有的手寫更新日誌清單標註精確的發布日期"
+    ],
     "isBugFix": false
   },
   {
     "version": "#110f09d",
     "date": "2026-08-05",
     "title": "功能：實作班級長期成績資料庫與影像預處理功能",
-    "details": [],
+    "details": [
+      "新增影像裁切與亮度調整工具，解決陰影過多或拍到桌面的問題",
+      "新增班級成績名冊，自動歸檔並追蹤每位學生的長遠表現與評語"
+    ],
     "isBugFix": false
   },
   {
     "version": "#aa406a0",
     "date": "2026-08-05",
     "title": "優化：在原始碼中隱藏開發者簽名",
-    "details": [],
+    "details": [
+      "於程式碼不影響運作的角落埋入「網站建立自楊家驊老師」的專屬宣告"
+    ],
     "isBugFix": false
   },
   {
     "version": "#5f09b6d",
     "date": "2026-08-05",
     "title": "功能：在圖片右上方與右下方加入浮水印",
-    "details": [],
+    "details": [
+      "加入 25% 透明度的淺灰色浮水印文字",
+      "採用智慧防重疊設計，自動避免浮水印遮擋核心文字"
+    ],
     "isBugFix": false
   },
   {
     "version": "#8a47dbe",
     "date": "2026-07-29",
     "title": "優化：設定新的模型備援順序",
-    "details": [],
+    "details": [
+      "優化 API 呼叫流程以避免單一模型擁塞失效"
+    ],
     "isBugFix": false
   },
   {
     "version": "#31466e1",
     "date": "2026-07-25",
     "title": "優化：更新手機版桌面圖示",
-    "details": [],
+    "details": [
+      "支援 iOS 加到主畫面的專屬高解析度 App 圖示"
+    ],
     "isBugFix": false
   },
   {
     "version": "#08f5910",
     "date": "2026-07-25",
     "title": "功能：更新網站圖示與標題為「文本批改AI助手」",
-    "details": [],
+    "details": [
+      "替換為極簡質感的向量網頁圖示"
+    ],
     "isBugFix": false
   },
   {
     "version": "#bc073e9",
     "date": "2026-07-25",
     "title": "功能：新增 API Key 設定提醒與計費警告",
-    "details": [],
+    "details": [
+      "當未輸入金鑰即按下批改時，會自動彈出引導與費用提醒說明"
+    ],
     "isBugFix": false
   },
   {
     "version": "#773956b",
     "date": "2026-07-25",
     "title": "優化：新增獎牌圖示資源",
-    "details": [],
+    "details": [
+      "將 AI 生成的高質感立體獎牌圖片正式納入專案資源庫"
+    ],
     "isBugFix": false
   },
   {
     "version": "#fc15567",
     "date": "2026-07-24",
     "title": "優化：更新日誌內容",
-    "details": [],
+    "details": [
+      "移除網頁標題中的多餘版本號字串"
+    ],
     "isBugFix": false
   },
   {
     "version": "#e87c70b",
     "date": "2026-07-24",
     "title": "功能：內建高畫質獎牌圖示為預設值",
-    "details": [],
+    "details": [
+      "取代原有的文字或簡易圖示，全面升級等第視覺體驗"
+    ],
     "isBugFix": false
   },
   {
     "version": "#90158c1",
     "date": "2026-07-24",
     "title": "功能：新增 SVG 獎牌圖示",
-    "details": [],
+    "details": [
+      "提供系統備用的向量質感獎牌"
+    ],
     "isBugFix": false
   },
   {
     "version": "#7a38252",
     "date": "2026-07-24",
     "title": "優化：修改網站標題",
-    "details": [],
+    "details": [
+      "統一名稱為 WriterTeacher 文本批改助手"
+    ],
     "isBugFix": false
   },
   {
     "version": "#f8cc21b",
     "date": "2026-07-24",
     "title": "UI：全新改版，極簡清晰的現代化介面設計",
-    "details": [],
+    "details": [
+      "移除多餘邊框與複雜元素，改以大留白、柔和陰影與清晰的字體層級呈現"
+    ],
     "isBugFix": false
   },
   {
     "version": "#94f0d92",
     "date": "2026-07-24",
     "title": "UI：最佳化介面對比度，提升閱讀體驗",
-    "details": [],
+    "details": [
+      "重新調整文字與背景的顏色層次",
+      "增強按鈕與輸入框的互動反饋效果"
+    ],
     "isBugFix": false
   },
   {
     "version": "#10b9abf",
     "date": "2026-07-24",
     "title": "系統：設定 GitHub Pages 自動部署腳本",
-    "details": [],
+    "details": [
+      "完成靜態網站打包與上線流程的自動化設定"
+    ],
     "isBugFix": false
   },
   {
     "version": "#0d2c456",
     "date": "2026-07-24",
     "title": "UI：新增毛玻璃特效與漸層背景",
-    "details": [],
+    "details": [
+      "導入 Apple 質感的半透明模糊特效"
+    ],
     "isBugFix": false
   },
   {
     "version": "#30fa0ea",
     "date": "2026-07-24",
     "title": "修復：修正打包時的語法錯誤",
-    "details": [],
+    "details": [
+      "解決 JSX 檔案中出現未跳脫字元導致編譯失敗的問題"
+    ],
     "isBugFix": true
   },
   {
     "version": "#f9dc5af",
     "date": "2026-07-24",
     "title": "修復：解決 GitHub Pages 部署時的空白畫面問題",
-    "details": [],
+    "details": [
+      "設定正確的 base URL 以對應 GitHub 網域結構"
+    ],
     "isBugFix": true
   },
   {
     "version": "#28e273a",
     "date": "2026-07-24",
     "title": "系統：專案建立與原始碼上傳",
-    "details": [],
+    "details": [
+      "完成 Vite React 開發環境建置與核心架構初始化"
+    ],
     "isBugFix": false
   }
 ]
