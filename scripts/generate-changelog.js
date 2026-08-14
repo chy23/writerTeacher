@@ -7,9 +7,9 @@ const __dirname = path.resolve();
 
 function generateChangelog() {
     try {
-        // Fetch the last 50 commits
+        // Fetch all commits
         // Format: Hash|||Date|||Subject|||Body===END_COMMIT===
-        const command = `git log -n 50 --pretty=format:"%h|||%cd|||%s|||%b===END_COMMIT===" --date=short`;
+        const command = `git log --pretty=format:"%h|||%cd|||%s|||%b===END_COMMIT===" --date=short`;
         const output = execSync(command, { encoding: 'utf-8' });
 
         const rawCommits = output.split('===END_COMMIT===');

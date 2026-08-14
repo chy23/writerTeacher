@@ -1,5 +1,12 @@
 [
   {
+    "version": "#294a3ab",
+    "date": "2026-08-14",
+    "title": "feat: Auto-generate changelog from Git history",
+    "details": [],
+    "isBugFix": false
+  },
+  {
     "version": "#f4ac569",
     "date": "2026-08-14",
     "title": "Update model fallback order",
