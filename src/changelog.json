@@ -1,0 +1,149 @@
+[
+  {
+    "version": "#f4ac569",
+    "date": "2026-08-14",
+    "title": "Update model fallback order",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#3253a1e",
+    "date": "2026-08-06",
+    "title": "Update changelog with dates",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#110f09d",
+    "date": "2026-08-05",
+    "title": "Implement Class Roster and Image Pre-processing features",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#aa406a0",
+    "date": "2026-08-05",
+    "title": "Hide author signature in HTML and JS",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#5f09b6d",
+    "date": "2026-08-05",
+    "title": "Add watermark text on top right and bottom right",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#8a47dbe",
+    "date": "2026-07-29",
+    "title": "Update model fallback order: 3-flash → 3.5-flash → 3.6-flash → 3.1-pro",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#31466e1",
+    "date": "2026-07-25",
+    "title": "Update apple-touch-icon",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#08f5910",
+    "date": "2026-07-25",
+    "title": "Add new favicon and update index.html title",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#bc073e9",
+    "date": "2026-07-25",
+    "title": "Add API Key missing reminder modal with cost warning",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#773956b",
+    "date": "2026-07-25",
+    "title": "Add custom medal images to public folder",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#fc15567",
+    "date": "2026-07-24",
+    "title": "Update changelog and remove version number from title",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#e87c70b",
+    "date": "2026-07-24",
+    "title": "Use local custom PNG images as permanent default medals",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#90158c1",
+    "date": "2026-07-24",
+    "title": "Add built-in SVG default medals",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#7a38252",
+    "date": "2026-07-24",
+    "title": "Rename app title",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#f8cc21b",
+    "date": "2026-07-24",
+    "title": "Complete UI redesign for maximum layout clarity and modern aesthetics",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#94f0d92",
+    "date": "2026-07-24",
+    "title": "Optimize UI contrast for better reading experience",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#10b9abf",
+    "date": "2026-07-24",
+    "title": "Configure gh-pages deployment",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#0d2c456",
+    "date": "2026-07-24",
+    "title": "Enhance UI with glassmorphism and gradient background",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#30fa0ea",
+    "date": "2026-07-24",
+    "title": "Fix Vite build error caused by unescaped characters",
+    "details": [],
+    "isBugFix": true
+  },
+  {
+    "version": "#f9dc5af",
+    "date": "2026-07-24",
+    "title": "Fix GitHub Pages blank screen issue (add base URL & deploy workflow)",
+    "details": [],
+    "isBugFix": true
+  },
+  {
+    "version": "#28e273a",
+    "date": "2026-07-24",
+    "title": "Initial commit: Add writerTeacher source code",
+    "details": [],
+    "isBugFix": false
+  }
+]

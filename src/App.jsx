@@ -74,6 +74,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import ImagePreProcessor from './ImagePreProcessor';
+import changelogData from './changelog.json';
 
 // --- 1. 常數設定 (Constants - Refined based on 108 Curriculum) ---
 
@@ -319,17 +320,7 @@ const POETRY_PROGRESS = {
   "高中 (10-12 年級)": "深化意象、象徵手法與藝術內涵。"
 };
 
-const CHANGELOG = [
-  { version: "最新更新 (2026-08-06)", content: ["功能：新增影像預處理與裁切工具", "功能：新增班級長期成績資料庫，自動追蹤學生成長軌跡", "UI 優化：升級為高對比度、極簡版面，卡片與區塊層次更鮮明", "功能：內建多款精美的等第獎牌圖示作為永久預設值"] },
-  { version: "V15.3.0 (2026-07-29)", content: ["系統：調整模型優先順序，將 Gemini-3-Flash 設為首選備援模型"] },
-  { version: "V15.2.0 (2026-07-29)", content: ["系統：新增 Gemini-3.5-Flash 模型並設為優先預設"] },
-  { version: "V15.1.0 (2026-07-25)", content: ["優化：圖卡版面防溢出機制，評語自動限制最多 2 點", "優化：AI 提示詞更新，強制模型產出精簡評語"] },
-  { version: "V15.0.2 (2026-07-25)", content: ["修復：修正原創性檢測服務 API 呼叫錯誤", "優化：增強 JSON 解析穩定度"] },
-  { version: "V15.0.1 (2026-07-24)", content: ["修復：增強 AI 評分表的解析能力，解決因格式不穩定導致的錯誤"] },
-  { version: "V15.0.0 (2026-07-24)", content: ["重大架構更新：採用雙階段 API 呼叫，原創性分析全面升級", "UI 優化：原創性結果以直觀的百分比進度條呈現"] },
-  { version: "V14.0.0 (2026-07-23)", content: ["重大更新：UI 全面優化，分數條增加黑色實線外框", "新增：圖片瀏覽器功能"] },
-  { version: "V13.23.0 (2026-07-23)", content: ["UI 優化：強化分數條外框為黑色實線，確保黑白列印清晰可見"] },
-];
+// CHANGELOG is now dynamically imported from changelog.json
 
 // --- 2. 輔助函式 (Helpers) ---
 
@@ -2495,14 +2486,35 @@ const App = () => {
 
       {showChangelog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setShowChangelog(false)}>
-          <div className="bg-white rounded-3xl p-8 max-w-lg w-full max-h-[70vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-xl font-black mb-6 flex items-center gap-2 text-slate-800"><History className="text-indigo-500" /> 更新日誌</h3>
-            {CHANGELOG.map((log, i) => (
-              <div key={i} className="mb-6 border-l-2 border-indigo-100 pl-4">
-                <span className="text-sm font-black text-indigo-600 bg-indigo-50 px-2 rounded mb-2 inline-block">{log.version}</span>
-                <ul className="space-y-1">{log.content.map((c, j) => <li key={j} className="text-sm text-slate-600 leading-relaxed">• {c}</li>)}</ul>
+          <div className="bg-white rounded-3xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-black flex items-center gap-2 text-slate-800"><History className="text-indigo-500" /> 開發更新紀錄</h3>
+              <button onClick={() => setShowChangelog(false)} className="p-2 bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-xl transition-colors"><X size={20}/></button>
+            </div>
+            
+            {changelogData.length === 0 ? (
+              <p className="text-slate-500 text-center py-8">目前沒有紀錄</p>
+            ) : (
+              <div className="space-y-6">
+                {changelogData.map((log, i) => (
+                  <div key={i} className={`p-5 rounded-2xl border ${log.isBugFix ? 'bg-orange-50/50 border-orange-100' : 'bg-slate-50/50 border-slate-100'}`}>
+                    <div className="flex flex-wrap items-center gap-3 mb-3">
+                      <span className="text-sm font-black text-indigo-600 bg-indigo-100 px-3 py-1 rounded-lg">版號: {log.version}</span>
+                      <span className="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-2 py-1 rounded-md">{log.date}</span>
+                      {log.isBugFix && <span className="text-xs font-bold text-rose-600 bg-rose-100 px-2 py-1 rounded-md flex items-center gap-1">🐛 Bug 修正</span>}
+                    </div>
+                    <h4 className="text-lg font-bold text-slate-800 mb-2">{log.title}</h4>
+                    {log.details && log.details.length > 0 && (
+                      <ul className="space-y-1.5 mt-3">
+                        {log.details.map((detail, j) => (
+                          <li key={j} className="text-sm text-slate-600 leading-relaxed pl-3 relative before:content-[''] before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:bg-indigo-300 before:rounded-full">{detail}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
