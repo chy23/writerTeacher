@@ -1,162 +1,169 @@
 [
   {
+    "version": "#9359033",
+    "date": "2026-08-14",
+    "title": "修復：修正自動部署的 Git 歷史抓取限制並恢復舊版日誌",
+    "details": [],
+    "isBugFix": true
+  },
+  {
     "version": "#3c92402",
     "date": "2026-08-14",
-    "title": "chore: Remove limit on changelog generation to show all future updates",
+    "title": "優化：解除日誌抓取筆數限制，完整呈現歷史紀錄",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#294a3ab",
     "date": "2026-08-14",
-    "title": "feat: Auto-generate changelog from Git history",
+    "title": "功能：新增自動從 Git 歷史產生更新日誌的功能",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#f4ac569",
     "date": "2026-08-14",
-    "title": "Update model fallback order",
+    "title": "優化：更新 AI 模型備援順序",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#3253a1e",
     "date": "2026-08-06",
-    "title": "Update changelog with dates",
+    "title": "優化：更新日誌加入確切日期",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#110f09d",
     "date": "2026-08-05",
-    "title": "Implement Class Roster and Image Pre-processing features",
+    "title": "功能：實作班級長期成績資料庫與影像預處理功能",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#aa406a0",
     "date": "2026-08-05",
-    "title": "Hide author signature in HTML and JS",
+    "title": "優化：在原始碼中隱藏開發者簽名",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#5f09b6d",
     "date": "2026-08-05",
-    "title": "Add watermark text on top right and bottom right",
+    "title": "功能：在圖片右上方與右下方加入浮水印",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#8a47dbe",
     "date": "2026-07-29",
-    "title": "Update model fallback order: 3-flash → 3.5-flash → 3.6-flash → 3.1-pro",
+    "title": "優化：設定新的模型備援順序",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#31466e1",
     "date": "2026-07-25",
-    "title": "Update apple-touch-icon",
+    "title": "優化：更新手機版桌面圖示",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#08f5910",
     "date": "2026-07-25",
-    "title": "Add new favicon and update index.html title",
+    "title": "功能：更新網站圖示與標題為「文本批改AI助手」",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#bc073e9",
     "date": "2026-07-25",
-    "title": "Add API Key missing reminder modal with cost warning",
+    "title": "功能：新增 API Key 設定提醒與計費警告",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#773956b",
     "date": "2026-07-25",
-    "title": "Add custom medal images to public folder",
+    "title": "優化：新增獎牌圖示資源",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#fc15567",
     "date": "2026-07-24",
-    "title": "Update changelog and remove version number from title",
+    "title": "優化：更新日誌內容",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#e87c70b",
     "date": "2026-07-24",
-    "title": "Use local custom PNG images as permanent default medals",
+    "title": "功能：內建高畫質獎牌圖示為預設值",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#90158c1",
     "date": "2026-07-24",
-    "title": "Add built-in SVG default medals",
+    "title": "功能：新增 SVG 獎牌圖示",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#7a38252",
     "date": "2026-07-24",
-    "title": "Rename app title",
+    "title": "優化：修改網站標題",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#f8cc21b",
     "date": "2026-07-24",
-    "title": "Complete UI redesign for maximum layout clarity and modern aesthetics",
+    "title": "UI：全新改版，極簡清晰的現代化介面設計",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#94f0d92",
     "date": "2026-07-24",
-    "title": "Optimize UI contrast for better reading experience",
+    "title": "UI：最佳化介面對比度，提升閱讀體驗",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#10b9abf",
     "date": "2026-07-24",
-    "title": "Configure gh-pages deployment",
+    "title": "系統：設定 GitHub Pages 自動部署腳本",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#0d2c456",
     "date": "2026-07-24",
-    "title": "Enhance UI with glassmorphism and gradient background",
+    "title": "UI：新增毛玻璃特效與漸層背景",
     "details": [],
     "isBugFix": false
   },
   {
     "version": "#30fa0ea",
     "date": "2026-07-24",
-    "title": "Fix Vite build error caused by unescaped characters",
+    "title": "修復：修正打包時的語法錯誤",
     "details": [],
     "isBugFix": true
   },
   {
     "version": "#f9dc5af",
     "date": "2026-07-24",
-    "title": "Fix GitHub Pages blank screen issue (add base URL & deploy workflow)",
+    "title": "修復：解決 GitHub Pages 部署時的空白畫面問題",
     "details": [],
     "isBugFix": true
   },
   {
     "version": "#28e273a",
     "date": "2026-07-24",
-    "title": "Initial commit: Add writerTeacher source code",
+    "title": "系統：專案建立與原始碼上傳",
     "details": [],
     "isBugFix": false
   }
