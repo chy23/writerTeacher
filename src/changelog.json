@@ -1,5 +1,12 @@
 [
   {
+    "version": "#d719b9a",
+    "date": "2026-08-14",
+    "title": "UI：為過去所有的更新日誌補齊詳細說明",
+    "details": [],
+    "isBugFix": false
+  },
+  {
     "version": "#464d29b",
     "date": "2026-08-14",
     "title": "UI：更新日誌全面中文化",
