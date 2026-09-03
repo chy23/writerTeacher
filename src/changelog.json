@@ -1,5 +1,12 @@
 [
   {
+    "version": "#b7118e1",
+    "date": "2026-08-15",
+    "title": "優化：更新模型順序為 3.7-flash → 3.6-flash → 3.5-flash → 3.1-pro",
+    "details": [],
+    "isBugFix": false
+  },
+  {
     "version": "#d719b9a",
     "date": "2026-08-14",
     "title": "UI：為過去所有的更新日誌補齊詳細說明",
