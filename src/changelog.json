@@ -1,5 +1,14 @@
 [
   {
+    "version": "#9a7bcee",
+    "date": "2026-09-03",
+    "title": "優化：更新模型順序為 3.8-flash → 3.7-flash → 3.6-flash → 3.1-pro",
+    "details": [
+      "將最新的 Gemini-3.8-Flash 設為優先預設模型，確保批改速度與品質"
+    ],
+    "isBugFix": false
+  },
+  {
     "version": "#b7118e1",
     "date": "2026-08-15",
     "title": "優化：更新模型順序為 3.7-flash → 3.6-flash → 3.5-flash → 3.1-pro",
