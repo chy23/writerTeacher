@@ -29,6 +29,30 @@ function generateChangelog() {
             const body = parts[3].trim();
 
             const TRANSLATIONS = {
+                "功能：新增 Gemini-4-Argon 模型選項並設定為 Gemini-3.1-Pro 前的備援模型（調用前需確認）": {
+                    title: "功能：新增 Gemini-4-Argon 模型選項並設定為 Gemini-3.1-Pro 前的備援模型（調用前需確認）",
+                    details: [
+                        "將最新模型 gemini-4-argon 納入系統模型選項清單",
+                        "備援順序配置於 gemini-3.1-pro-preview 之前",
+                        "實作調用授權對話窗：當 Flash 系列模型失效切換至 4-Argon 前主動詢問使用者確認",
+                        "支援批改中記住授權或略過此模型，兼顧靈活性與防誤用機制",
+                        "控制面板新增 AI 模型使用順序可視化卡片，隨時掌握優先級與狀態"
+                    ]
+                },
+                "優化：更新模型順序為 3.7-flash → 3.6-flash → 3.5-flash → 3.1-pro": {
+                    title: "優化：更新模型順序為 3.7-flash → 3.6-flash → 3.5-flash → 3.1-pro",
+                    details: [
+                        "優先使用最新高效之 Gemini-3.7-Flash 進行批改",
+                        "依序將 3.6-Flash 與 3.5-Flash 作為第二與第三順位備援"
+                    ]
+                },
+                "UI：為過去所有的更新日誌補齊詳細說明": {
+                    title: "UI：為過去所有的更新日誌補齊詳細說明",
+                    details: [
+                        "為歷史版本的更新日誌補充繁體中文詳細條列說明",
+                        "優化日誌卡片閱讀體驗與排版結構"
+                    ]
+                },
                 "UI：更新日誌全面中文化": { title: "UI：更新日誌全面中文化", details: ["內建英翻中對照表，將所有過去的英文更新紀錄自動轉為繁體中文顯示", "確立未來所有的系統更新紀錄將全面以繁體中文撰寫"] },
                 "fix: Fetch full git history in GH actions and restore legacy changelog": { title: "修復：修正自動部署的 Git 歷史抓取限制並恢復舊版日誌", details: ["修正 GitHub Actions 預設只抓取單筆紀錄的問題，確保歷史日誌完整性", "將 V15 以前的手動更新紀錄重新合併至系統中"] },
                 "chore: Remove limit on changelog generation to show all future updates": { title: "優化：解除日誌抓取筆數限制，完整呈現歷史紀錄", details: ["移除「僅顯示近50筆」的限制，確保未來數百筆更新皆能完整呈現"] },
@@ -70,6 +94,7 @@ function generateChangelog() {
             if (mapping && mapping.details) {
                 parsedDetails = [...mapping.details, ...parsedDetails];
             }
+            parsedDetails = Array.from(new Set(parsedDetails));
 
             changelog.push({
                 version: `#${hash}`,

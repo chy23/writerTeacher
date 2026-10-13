@@ -100,6 +100,8 @@ const FALLBACK_MODEL_ORDER = [
   { id: 'gemini-3.8-flash', name: 'Gemini-3.8-Flash' },
   { id: 'gemini-3.7-flash', name: 'Gemini-3.7-Flash' },
   { id: 'gemini-3.6-flash', name: 'Gemini-3.6-Flash' },
+  { id: 'gemini-3.5-flash', name: 'Gemini-3.5-Flash' },
+  { id: 'gemini-4-argon', name: 'Gemini-4-Argon', requireConfirmation: true },
   { id: 'gemini-3.1-pro-preview', name: 'Gemini-3.1-Pro' },
 ];
 
@@ -712,6 +714,21 @@ const App = () => {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isLoadingFile, setIsLoadingFile] = useState(false);
   const [viewingImage, setViewingImage] = useState(null); // State for Image Viewer
+  const [modelPermissionModal, setModelPermissionModal] = useState(null);
+  const approvedModelsRef = useRef(new Set());
+  const declinedModelsRef = useRef(new Set());
+
+  const requestModelPermission = (model) => {
+    return new Promise((resolve) => {
+      setModelPermissionModal({
+        model,
+        resolve: (decision) => {
+          setModelPermissionModal(null);
+          resolve(decision);
+        }
+      });
+    });
+  };
 
   const stopRef = useRef(false);
   const abortControllerRef = useRef(null);
@@ -1622,6 +1639,27 @@ const App = () => {
       let usedModelId = "";
 
       for (const model of FALLBACK_MODEL_ORDER) {
+        if (model.requireConfirmation) {
+          if (!approvedModelsRef.current.has(model.id)) {
+            if (declinedModelsRef.current.has(model.id)) {
+              console.log(`略過模型 ${model.name}`);
+              continue;
+            }
+            const decision = await requestModelPermission(model);
+            if (decision === 'cancel') {
+              stopRef.current = true;
+              if (abortControllerRef.current) abortControllerRef.current.abort();
+              throw new Error("使用者取消批改作業");
+            }
+            if (decision === 'skip') {
+              declinedModelsRef.current.add(model.id);
+              continue;
+            }
+            if (decision === 'approve_all') {
+              approvedModelsRef.current.add(model.id);
+            }
+          }
+        }
         try {
           gradingResult = await callGeminiWithRetry(model.id, payload);
           usedModelName = model.name;
@@ -1788,6 +1826,8 @@ const App = () => {
           setShowApiKeyModal(true);
           return;
       }
+      approvedModelsRef.current.clear();
+      declinedModelsRef.current.clear();
       setIsProcessing(true); 
       stopRef.current = false;
       abortControllerRef.current = new AbortController();
@@ -2031,6 +2071,32 @@ const App = () => {
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Gemini API Key</label>
               <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border rounded-2xl outline-none" placeholder="Enter API Key" />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">AI 模型使用順序</label>
+                <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">共 5 款</span>
+              </div>
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 space-y-1.5 text-xs">
+                {FALLBACK_MODEL_ORDER.map((m, idx) => (
+                  <div key={m.id} className="flex items-center justify-between py-0.5">
+                    <span className="flex items-center gap-2">
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${idx === 0 ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                        {idx + 1}
+                      </span>
+                      <span className={`text-slate-700 font-medium truncate ${idx === 0 ? 'font-bold text-slate-900' : ''}`}>{m.name}</span>
+                    </span>
+                    {m.requireConfirmation ? (
+                      <span className="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold shrink-0">調用前詢問</span>
+                    ) : idx === 0 ? (
+                      <span className="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold shrink-0">優先首選</span>
+                    ) : (
+                      <span className="text-[9px] text-slate-400 font-medium shrink-0">備援</span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div>
@@ -2498,6 +2564,71 @@ const App = () => {
                 <button onClick={() => setShowApiKeyModal(false)} className="py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-colors">
                   我知道了
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modelPermissionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 p-4">
+          <div className="bg-white rounded-3xl p-7 max-w-md w-full shadow-2xl transform scale-100 animate-in zoom-in-95 duration-300 border-2 border-indigo-100" onClick={e => e.stopPropagation()}>
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-50 border border-indigo-100 mb-4 text-indigo-600">
+                <Cpu size={32} />
+              </div>
+              
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-black rounded-full mb-3 border border-indigo-100">
+                <Sparkles size={13} />
+                <span>備援模型調用確認</span>
+              </div>
+              
+              <h3 className="text-xl font-black text-slate-800 mb-2">
+                是否調用備援模型 {modelPermissionModal.model.name}？
+              </h3>
+              
+              <p className="text-slate-600 mb-4 text-xs leading-relaxed text-left bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                前述的 Flash 系列模型（3.7 / 3.6 / 3.5）暫時無法連線或額度已達上限。系統即將調用備援模型清單中的最新模型：<strong className="text-indigo-600">{modelPermissionModal.model.name}</strong>。<br/><br/>
+                請問是否允許調用此模型繼續批改作業？
+              </p>
+
+              <div className="flex items-center justify-center gap-2 mb-5 text-xs text-slate-600 bg-indigo-50/50 py-2.5 px-3 rounded-xl border border-indigo-100/50">
+                <input 
+                  type="checkbox" 
+                  id="rememberModelChoice" 
+                  defaultChecked={true}
+                  className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
+                />
+                <label htmlFor="rememberModelChoice" className="cursor-pointer select-none font-medium">
+                  本次批改後續作業皆允許調用（不再重複詢問）
+                </label>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-2.5">
+                <button 
+                  onClick={() => {
+                    const remember = document.getElementById('rememberModelChoice')?.checked;
+                    modelPermissionModal.resolve(remember ? 'approve_all' : 'approve');
+                  }} 
+                  className="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-sm font-black transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <CheckCircle2 size={16} /> 允許調用此模型
+                </button>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <button 
+                    onClick={() => modelPermissionModal.resolve('skip')} 
+                    className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    略過此模型 (跳至下一個備援)
+                  </button>
+                  <button 
+                    onClick={() => modelPermissionModal.resolve('cancel')} 
+                    className="py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition-colors border border-rose-100 cursor-pointer"
+                  >
+                    取消批改
+                  </button>
+                </div>
               </div>
             </div>
           </div>
