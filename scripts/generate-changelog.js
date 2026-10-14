@@ -29,6 +29,13 @@ function generateChangelog() {
             const body = parts[3].trim();
 
             const TRANSLATIONS = {
+                "優化：統一全專案模型備援順序，移除 3.5-flash 回歸標準 5 階層": {
+                    title: "優化：統一全專案模型備援順序，移除 3.5-flash 回歸標準 5 階層",
+                    details: [
+                        "移除過時之 gemini-3.5-flash 模型，回歸全平台一致的 5 款標準模型順位",
+                        "最新調用順序為：3.8-flash ➔ 3.7-flash ➔ 3.6-flash ➔ 4-argon (彈窗確認) ➔ 3.1-pro-preview"
+                    ]
+                },
                 "功能：新增 Gemini-4-Argon 模型選項並設定為 Gemini-3.1-Pro 前的備援模型（調用前需確認）": {
                     title: "功能：新增 Gemini-4-Argon 模型選項並設定為 Gemini-3.1-Pro 前的備援模型（調用前需確認）",
                     details: [
