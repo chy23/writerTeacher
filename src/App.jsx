@@ -353,6 +353,44 @@ const loadScript = (src) => {
   });
 };
 
+// --- 標準規準白名單向度定義 (Standard Criteria Whitelist) ---
+const STANDARD_CRITERIA_MAP = {
+  Bf: [
+    { key: "imagery", label: "意象", defaultTotal: 30, aliases: ["意象", "詩意", "意境", "意象經營"] },
+    { key: "form", label: "形式", defaultTotal: 20, aliases: ["形式", "分行", "節奏", "排版", "形式節奏"] },
+    { key: "rhetoric", label: "修辭", defaultTotal: 20, aliases: ["修辭", "技巧", "語言精煉", "字詞修辭", "修辭技巧"] },
+    { key: "content", label: "內容", defaultTotal: 30, aliases: ["內容", "情感", "主旨", "想像力", "真摯情感"] }
+  ],
+  auto_science: [
+    { key: "logic", label: "探究與邏輯", defaultTotal: 40, aliases: ["探究與邏輯", "探究邏輯", "探究能力", "邏輯思維", "問題探究", "實驗與邏輯", "探究", "邏輯"] },
+    { key: "evidence", label: "證據與資料", defaultTotal: 30, aliases: ["證據與資料", "證據資料", "數據資料", "資料蒐集", "證據", "資料"] },
+    { key: "structure", label: "表達與結構", defaultTotal: 30, aliases: ["表達與結構", "表達結構", "組織結構", "論述表達", "溝通表達", "表達", "結構"] }
+  ],
+  default: [
+    { key: "theme", label: "立意與取材", defaultTotal: 40, aliases: ["立意與取材", "立意取材", "取材與立意", "立意", "取材", "審題立意", "內容取材", "主題與內容"] },
+    { key: "structure", label: "結構與組織", defaultTotal: 30, aliases: ["結構與組織", "結構組織", "篇章結構", "組織結構", "篇章架構", "段落組織", "結構", "組織"] },
+    { key: "language", label: "遣詞與造句", defaultTotal: 20, aliases: ["遣詞與造句", "遣詞造句", "字詞造句", "修辭造句", "詞句運用", "遣詞", "造句", "修辭與文句", "文句修辭"] },
+    { key: "format", label: "字體與格式", defaultTotal: 10, aliases: ["字體與格式", "字體格式", "標點符號", "格式與標點", "錯別字與標點", "書寫與標點", "字體", "格式", "錯別字", "標點"] }
+  ]
+};
+
+const sanitizeDetailedScores = (scores, totalScore, typeId) => {
+  if (!Array.isArray(scores) || scores.length === 0) return null;
+  const isCorrupt = scores.some(s => ["符應", "展現", "請落實", "依據", "課綱", "指標", "規範"].some(b => (s.label || "").includes(b)));
+  if (!isCorrupt && scores.length >= 3) return scores;
+
+  const std = typeId === 'Bf' ? STANDARD_CRITERIA_MAP.Bf :
+              (typeId === 'auto' ? STANDARD_CRITERIA_MAP.auto_science : STANDARD_CRITERIA_MAP.default);
+  const total = parseInt(totalScore) || 75;
+  const maxTotal = std.reduce((acc, c) => acc + c.defaultTotal, 0);
+  const ratio = Math.min(1, Math.max(0.1, total / maxTotal));
+  return std.map(c => ({
+    label: c.label,
+    score: Math.round(c.defaultTotal * ratio),
+    total: c.defaultTotal
+  }));
+};
+
 // --- AI 評分回傳超強容錯解析器 (Robust Multi-Strategy Parser) ---
 const parseGradingResponse = (rawText, textTypeId, gradeLevel) => {
   if (!rawText || typeof rawText !== "string") return null;
@@ -423,65 +461,90 @@ const parseGradingResponse = (rawText, textTypeId, gradeLevel) => {
     }
   }
 
-  // 6. 提取總分
-  let scoreMatch = text.match(/(?:##\s*|###\s*|【|\*\*|#)?\s*(?:總分|總成績|總計)\s*[:：]?\s*(\d+)/i) ||
-                   text.match(/得分\s*[:：]?\s*(\d+)\s*(?:[分\s]*[\/／]\s*100)?/i);
-  let parsedTotalScore = scoreMatch ? parseInt(scoreMatch[1]) : null;
-
-  // 7. 各項規準標準預設值
-  const STANDARD_CRITERIA = {
-    Bf: [
-      { label: "意象", defaultTotal: 30 },
-      { label: "形式", defaultTotal: 20 },
-      { label: "修辭", defaultTotal: 20 },
-      { label: "內容", defaultTotal: 30 }
-    ],
-    auto_science: [
-      { label: "探究與邏輯", defaultTotal: 40 },
-      { label: "證據與資料", defaultTotal: 30 },
-      { label: "表達與結構", defaultTotal: 30 }
-    ],
-    default: [
-      { label: "立意與取材", defaultTotal: 40 },
-      { label: "結構與組織", defaultTotal: 30 },
-      { label: "遣詞與造句", defaultTotal: 20 },
-      { label: "字體與格式", defaultTotal: 10 }
-    ]
-  };
-
-  const scores = [];
-  const foundLabels = new Set();
-
-  const addScore = (label, scoreNum, totalNum) => {
-    const cleanLabel = label.replace(/[\[\]【】\*\-\d\.\s#()（）:：]/g, "").trim();
-    if (!cleanLabel || cleanLabel.length < 2) return;
-    if (cleanLabel.includes("項目") || cleanLabel.includes("分數") || cleanLabel.includes("總分") || 
-        cleanLabel.includes("成績") || cleanLabel.includes("得分") || cleanLabel.includes("總計") || 
-        cleanLabel.toLowerCase().includes("total")) return;
-    if (foundLabels.has(cleanLabel)) return;
-
-    let score = parseInt(scoreNum);
-    let total = parseInt(totalNum) || 0;
-    if (isNaN(score)) return;
-
-    if (total === 0) {
-      const allStd = [...STANDARD_CRITERIA.default, ...STANDARD_CRITERIA.Bf, ...STANDARD_CRITERIA.auto_science];
-      const matchStd = allStd.find(c => cleanLabel.includes(c.label) || c.label.includes(cleanLabel));
-      if (matchStd) {
-        total = matchStd.defaultTotal;
-      } else {
-        total = textTypeId === "auto" ? (scores.length === 0 ? 40 : 30) : (scores.length === 3 ? 10 : 30);
+  // 6. 提取總分 (支援 Markdown 粗體 **85**, 85/100, 85分, 標題換行等多種排版)
+  let parsedTotalScore = null;
+  const totalScoreRegexes = [
+    /(?:總分|總成績|總計|得分)[^\d\n]*?[:：]?[\s\*]*(\d{1,3})\s*(?:[分\s]*[\/／]\s*100|[分\s\*]|\/100)?/i,
+    /##\s*總分[^\d\n]*\n+[\s\*]*(\d{1,3})/i,
+    /【總分】[^\d\n]*\n*[\s\*]*(\d{1,3})/i,
+    /\*\*總分\*\*[：:\s\*]*(\d{1,3})/i,
+    /總分\s*=\s*(\d{1,3})/i
+  ];
+  for (const regex of totalScoreRegexes) {
+    const match = text.match(regex);
+    if (match && match[1]) {
+      const val = parseInt(match[1], 10);
+      if (!isNaN(val) && val >= 0 && val <= 100) {
+        parsedTotalScore = val;
+        break;
       }
     }
+  }
 
-    foundLabels.add(cleanLabel);
-    scores.push({ label: cleanLabel, score, total });
+  // 7. 各項規準標準預設值與別名白名單 (防止評語文字如「符應」、「展現」被誤判為向度)
+  const targetCriteriaList = textTypeId === "Bf" ? STANDARD_CRITERIA_MAP.Bf :
+                             (textTypeId === "auto" || (evaluatedType && evaluatedType.includes("探究")) || text.includes("探究") ? STANDARD_CRITERIA_MAP.auto_science : STANDARD_CRITERIA_MAP.default);
+
+  // 嚴格黑名單：杜絕評語常見字眼、課綱指示動詞誤判為向度
+  const BANNED_WORDS = [
+    "符應", "展現", "請落實", "落實", "依據", "建議", "亮點", "改善", "優點", "缺點", 
+    "說明", "指標", "課綱", "表現", "條目", "評語", "總分", "得分", "成績", "總計",
+    "項目", "規準", "第一", "第二", "第三", "第四", "範例", "原文", "判定", "領域", "年級", "綜合"
+  ];
+
+  const matchCriterion = (rawLabel) => {
+    const clean = rawLabel.replace(/[*#_`\[\]【】()（）:：\-\d\.\s]/g, "").trim();
+    if (!clean || clean.length < 2) return null;
+    if (BANNED_WORDS.some(bw => clean.startsWith(bw) || clean === bw)) return null;
+
+    // 先在目標向度比對
+    for (const crit of targetCriteriaList) {
+      if (clean === crit.label || crit.aliases.some(a => clean === a || clean.includes(a) || a.includes(clean))) {
+        return crit;
+      }
+    }
+    // 再在全向度中尋找
+    const allCriteria = [...STANDARD_CRITERIA_MAP.default, ...STANDARD_CRITERIA_MAP.auto_science, ...STANDARD_CRITERIA_MAP.Bf];
+    for (const crit of allCriteria) {
+      if (clean === crit.label || crit.aliases.some(a => clean === a || clean.includes(a) || a.includes(clean))) {
+        return crit;
+      }
+    }
+    return null;
   };
+
+  const foundKeys = new Set();
+  const scores = [];
+
+  const addScore = (rawLabel, scoreNum, totalNum) => {
+    const crit = matchCriterion(rawLabel);
+    if (!crit) return; // 嚴格過濾：非規準字詞一律忽略
+    if (foundKeys.has(crit.key)) return;
+
+    let score = parseInt(scoreNum);
+    let total = parseInt(totalNum) || crit.defaultTotal;
+    if (isNaN(score)) return;
+
+    if (total <= 0 || total > 100) total = crit.defaultTotal;
+    if (score > total) score = total;
+
+    foundKeys.add(crit.key);
+    scores.push({ label: crit.label, score, total });
+  };
+
+  // 8. 評分表區塊隔離：僅在「## 評分表」範圍內解析向度，絕不跨足「評語/亮點/原文」
+  let scoreBlock = text;
+  const scoreBlockMatch = text.match(/##\s*評分(?:表)?[\s\S]*?(?=\n##\s*(?:總分|綜合評語|文章亮點|優點|這樣寫會更好|改善建議|文本類型|OCR)|$)/i);
+  if (scoreBlockMatch) {
+    scoreBlock = scoreBlockMatch[0];
+  } else {
+    scoreBlock = text.split(/\n##\s*(?:綜合評語|文章亮點|優點|這樣寫會更好|改善建議|OCR)/i)[0];
+  }
 
   // 策略 A：相容 Markdown 表格 (2欄、3欄、4欄)
   const tableRowRegex = /\|([^|\n]+)\|([^|\n]+)(?:\|([^|\n]+))?(?:\|([^|\n]+))?\|/g;
   let tMatch;
-  while ((tMatch = tableRowRegex.exec(text)) !== null) {
+  while ((tMatch = tableRowRegex.exec(scoreBlock)) !== null) {
     const col1 = tMatch[1].trim();
     const col2 = tMatch[2].trim();
     const col3 = tMatch[3] ? tMatch[3].trim() : "";
@@ -511,10 +574,10 @@ const parseGradingResponse = (rawText, textTypeId, gradeLevel) => {
     }
   }
 
-  // 策略 B：逐行正則辨識 (相容冒號、括號、分、橫線等)
-  const lines = text.split("\n");
+  // 策略 B：逐行正則辨識 (僅在 scoreBlock 內執行)
+  const lines = scoreBlock.split("\n");
   for (const line of lines) {
-    const cleanLine = line.replace(/\*/g, "").trim();
+    const cleanLine = line.replace(/[*#_`]/g, "").trim();
     if (!cleanLine || cleanLine.startsWith("|")) continue;
 
     // 格式 1: [立意與取材]: 32/40 or 立意與取材: 32/40 or 立意與取材: 32 / 40 分
@@ -524,8 +587,8 @@ const parseGradingResponse = (rawText, textTypeId, gradeLevel) => {
       continue;
     }
 
-    // 格式 2: 立意與取材 (32/40) or 立意與取材（32/40）
-    const p2 = cleanLine.match(/([^\d\s()（）]+)\s*[（(]\s*(\d+)\s*[\/／]\s*(\d+)\s*[)）]/);
+    // 格式 2: 立意與取材 (32/40) or 立意與取材（32/40分）
+    const p2 = cleanLine.match(/([^\d\s()（）]+)\s*[（(]\s*(\d+)\s*[\/／]\s*(\d+)\s*(?:[分\s]*)?[)）]/);
     if (p2 && p2[1]) {
       addScore(p2[1], p2[2], p2[3]);
       continue;
@@ -539,31 +602,70 @@ const parseGradingResponse = (rawText, textTypeId, gradeLevel) => {
     }
   }
 
-  // 策略 C：若抓取到的細項不足，直接在全文搜尋常見規準關鍵字
-  if (scores.length < 2) {
-    const activeCriteria = textTypeId === "Bf" ? STANDARD_CRITERIA.Bf :
-                           (text.includes("探究") ? STANDARD_CRITERIA.auto_science : STANDARD_CRITERIA.default);
-    
-    for (const crit of activeCriteria) {
+  // 策略 C：若抓取到的細項不足，搜尋標準規準關鍵字
+  if (scores.length < targetCriteriaList.length) {
+    for (const crit of targetCriteriaList) {
+      if (foundKeys.has(crit.key)) continue;
       const regex = new RegExp(crit.label + "[^\n\\d]*?(\\d+)(?:\\s*[\\/／]\\s*(\\d+))?", "i");
-      const m = text.match(regex);
+      const m = scoreBlock.match(regex) || text.match(regex);
       if (m) {
         addScore(crit.label, m[1], m[2] || crit.defaultTotal);
       }
     }
   }
 
-  // 策略 D：若完全無細項但有總分，依標準權重智慧等比例建構細項分數
-  if (scores.length === 0 && parsedTotalScore !== null && !isNaN(parsedTotalScore) && parsedTotalScore > 0) {
-    const std = textTypeId === "Bf" ? STANDARD_CRITERIA.Bf :
-                (text.includes("探究") ? STANDARD_CRITERIA.auto_science : STANDARD_CRITERIA.default);
-    const maxTotal = std.reduce((acc, c) => acc + c.defaultTotal, 0);
-    const ratio = Math.min(1, parsedTotalScore / maxTotal);
-    for (const c of std) {
-      scores.push({
-        label: c.label,
-        score: Math.round(c.defaultTotal * ratio),
-        total: c.defaultTotal
+  // 策略 D：若仍未解析出總分，從文本推估廣義評分或 L1-L5 等級
+  if (parsedTotalScore === null && scores.length === 0) {
+    const broadMatch = text.match(/(?:給予|評定為|評分(?:為|：|:)?|成績(?:為|：|:)?)\s*[\*]*(\d{2,3})[\*]*\s*分/i);
+    if (broadMatch) {
+      const val = parseInt(broadMatch[1], 10);
+      if (!isNaN(val) && val >= 0 && val <= 100) {
+        parsedTotalScore = val;
+      }
+    } else {
+      const levelMatch = text.match(/\b(L[1-5])\b/i) || text.match(/([1-5])\s*級分/);
+      if (levelMatch) {
+        const lvl = (levelMatch[1] || "").toUpperCase();
+        const levelMap = { 'L5': 95, 'L4': 85, 'L3': 75, 'L2': 60, 'L1': 40, '5': 95, '4': 85, '3': 75, '2': 60, '1': 40 };
+        if (levelMap[lvl]) {
+          parsedTotalScore = levelMap[lvl];
+        }
+      }
+    }
+  }
+
+  // 策略 E：若部分或全部標準向度缺失，以目標向度智慧補全正規標準向度
+  if (scores.length < targetCriteriaList.length) {
+    const totalScoreNum = (parsedTotalScore !== null && !isNaN(parsedTotalScore) && parsedTotalScore > 0)
+      ? parsedTotalScore
+      : (scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b.score, 0) / scores.reduce((a, b) => a + b.total, 0)) * 100) : 75);
+
+    const maxTotal = targetCriteriaList.reduce((acc, c) => acc + c.defaultTotal, 0);
+    const ratio = Math.min(1, Math.max(0.1, totalScoreNum / maxTotal));
+
+    if (scores.length === 0) {
+      for (const c of targetCriteriaList) {
+        scores.push({
+          label: c.label,
+          score: Math.round(c.defaultTotal * ratio),
+          total: c.defaultTotal
+        });
+      }
+    } else {
+      for (const c of targetCriteriaList) {
+        if (!foundKeys.has(c.key)) {
+          scores.push({
+            label: c.label,
+            score: Math.round(c.defaultTotal * ratio),
+            total: c.defaultTotal
+          });
+          foundKeys.add(c.key);
+        }
+      }
+      scores.sort((a, b) => {
+        const idxA = targetCriteriaList.findIndex(c => c.label === a.label);
+        const idxB = targetCriteriaList.findIndex(c => c.label === b.label);
+        return idxA - idxB;
       });
     }
   }
@@ -914,7 +1016,23 @@ const App = () => {
     console.log("%c網站建立自楊家驊老師 The website was created by Teacher ChiahuaYang", "color: #4f46e5; font-size: 14px; font-weight: bold;");
   }, []);
   
-  const [apiKey, setApiKey] = useState('');
+  const [apiKey, setApiKey] = useState(() => {
+    try {
+      return localStorage.getItem('gemini_api_key') || localStorage.getItem('essay_grader_api_key') || '';
+    } catch (e) {
+      return '';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (apiKey) {
+        localStorage.setItem('gemini_api_key', apiKey);
+      }
+    } catch (e) {
+      console.warn("Failed to save apiKey to localStorage", e);
+    }
+  }, [apiKey]);
   const [gradeLevel, setGradeLevel] = useState(GRADE_LEVELS[2]); // Default to 5-6th grade
   const [textTypeId, setTextTypeId] = useState(TEXT_TYPES[0].id); // Default to Auto
   const [gradingDate, setGradingDate] = useState(new Date().toISOString().split('T')[0]);
@@ -986,14 +1104,24 @@ const App = () => {
           if (data.gradingDate) setGradingDate(data.gradingDate);
           if (data.essayTopic) setEssayTopic(data.essayTopic);
           if (data.classAnalysis) setClassAnalysis(data.classAnalysis);
+          if (!apiKey && data.apiKey) setApiKey(data.apiKey);
           if (data.essays) {
-            const restoredEssays = data.essays.map(e => ({
-              ...e,
-              images: e.images.map(img => ({
-                ...img,
-                preview: img.file ? URL.createObjectURL(img.file) : null
-              }))
-            }));
+            const restoredEssays = data.essays.map(e => {
+              let cleanResponse = e.response;
+              if (cleanResponse && (cleanResponse.includes("AI 回傳格式不符") || cleanResponse.includes("無法讀取分數與評語"))) {
+                cleanResponse = "先前批改中斷或格式未解析，請點擊「重試」以重新批改。";
+              }
+              const cleanScores = sanitizeDetailedScores(e.detailedScores, e.score, data.textTypeId || textTypeId);
+              return {
+                ...e,
+                response: cleanResponse,
+                detailedScores: cleanScores || e.detailedScores,
+                images: (e.images || []).map(img => ({
+                  ...img,
+                  preview: (img.file instanceof Blob) ? URL.createObjectURL(img.file) : (img.preview || null)
+                }))
+              };
+            });
             setEssays(restoredEssays);
           }
         }
@@ -1009,15 +1137,31 @@ const App = () => {
     init();
   }, []);
 
+  // 自動修復歷史殘留之異常向度標籤（如「符應」、「展現」）
+  useEffect(() => {
+    let hasCorrupt = false;
+    const sanitized = essays.map(e => {
+      if (e.detailedScores?.some(s => ["符應", "展現", "請落實", "依據", "課綱", "指標"].some(b => (s.label || "").includes(b)))) {
+        hasCorrupt = true;
+        const cleanScores = sanitizeDetailedScores(e.detailedScores, e.score, textTypeId);
+        return { ...e, detailedScores: cleanScores };
+      }
+      return e;
+    });
+    if (hasCorrupt) {
+      setEssays(sanitized);
+    }
+  }, [essays, textTypeId]);
+
   useEffect(() => {
     const save = setTimeout(async () => {
         if (essays.length > 0) {
-             const state = { gradeLevel, textTypeId, gradingDate, essayTopic, classAnalysis, essays: essays.map(e => ({...e, images: e.images.map(img => ({...img, preview: null}))})) };
+             const state = { gradeLevel, textTypeId, gradingDate, essayTopic, classAnalysis, apiKey, essays: essays.map(e => ({...e, images: e.images.map(img => ({...img, preview: null}))})) };
              await saveToDB('currentState', state);
         }
     }, 2000);
     return () => clearTimeout(save);
-  }, [essays, gradeLevel, textTypeId, gradingDate, essayTopic, classAnalysis]);
+  }, [essays, gradeLevel, textTypeId, gradingDate, essayTopic, classAnalysis, apiKey]);
 
   // Auto-save completed essays to Class Roster
   useEffect(() => {
@@ -1698,8 +1842,9 @@ const App = () => {
     }
   };
 
-  const callGeminiWithRetry = async (modelId, payload, retries = 5) => {
+  const callGeminiWithRetry = async (modelId, payload, retries = 3) => {
     let delay = 1000;
+    let lastErrorMsg = "";
     for (let i = 0; i < retries; i++) {
       if (stopRef.current) throw new Error("使用者停止"); 
       try {
@@ -1711,27 +1856,81 @@ const App = () => {
               signal: abortControllerRef.current?.signal 
           });
         if (response.ok) return await response.json();
-        if (response.status !== 429 && response.status < 500) break;
+
+        let errJson = null;
+        try {
+          errJson = await response.json();
+        } catch (e) {}
+
+        const errMsg = errJson?.error?.message || `HTTP ${response.status}`;
+        lastErrorMsg = errMsg;
+        console.warn(`[Gemini API] ${modelId} 回應失敗 (${response.status}):`, errMsg);
+
+        if (response.status === 400 && errMsg.toLowerCase().includes("api key")) {
+          throw new Error("Gemini API Key 無效，請確認 API Key 是否填寫正確。");
+        }
+        if (response.status === 403) {
+          throw new Error("Gemini API 權限不足或 API Key 已受限 (403)。");
+        }
+        if (response.status !== 429 && response.status < 500) {
+          throw new Error(`API 請求錯誤 (${response.status}): ${errMsg}`);
+        }
       } catch (e) {
-          if (e.name === 'AbortError' || stopRef.current) throw new Error("使用者停止");
+        if (e.name === 'AbortError' || stopRef.current || e.message === "使用者停止") throw new Error("使用者停止");
+        if (e.message.includes("API Key") || e.message.includes("403")) throw e;
+        lastErrorMsg = e.message;
       }
       await sleep(delay); delay *= 2;
     }
-    throw new Error("API 調用失敗");
+    throw new Error(lastErrorMsg || "API 調用失敗");
   };
 
   const processEssay = async (essayId) => {
     const essay = essaysRef.current.find(e => e.id === essayId);
     if (!essay) return false;
-    setEssays(prev => prev.map(e => e.id === essayId ? { ...e, status: 'processing' } : e));
+
+    if (!apiKey || !apiKey.trim()) {
+      setShowApiKeyModal(true);
+      showToast("請先輸入 Gemini API Key 後再進行批改", "error");
+      setEssays(prev => prev.map(e => e.id === essayId ? { ...e, status: 'pending' } : e));
+      return false;
+    }
+
+    setEssays(prev => prev.map(e => e.id === essayId ? { ...e, status: 'processing', response: null } : e));
     
     try {
       // Step 1: Grading and OCR
-      const imageParts = await Promise.all(essay.images.map(async (img) => {
-        const base64 = await new Promise(resolve => {
-          const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.readAsDataURL(img.file);
-        });
-        return { inlineData: { mimeType: img.file.type, data: base64 } };
+      if (!essay.images || essay.images.length === 0) {
+        throw new Error("找不到作業圖檔，請重新上傳照片。");
+      }
+
+      const validImages = essay.images.filter(img => img && (img.file instanceof Blob || (typeof img.preview === 'string' && img.preview.startsWith('data:'))));
+
+      if (validImages.length === 0) {
+        throw new Error("作業照片資料已失效，請重新上傳照片。");
+      }
+
+      const imageParts = await Promise.all(validImages.map(async (img) => {
+        let base64 = "";
+        let mimeType = img.file?.type || "image/jpeg";
+
+        if (img.file instanceof Blob) {
+          base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const res = reader.result;
+              resolve(typeof res === 'string' ? res.split(',')[1] : "");
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(img.file);
+          });
+        } else if (typeof img.preview === 'string' && img.preview.startsWith('data:')) {
+          const parts = img.preview.split(',');
+          base64 = parts[1];
+          const mimeMatch = parts[0].match(/:(.*?);/);
+          if (mimeMatch) mimeType = mimeMatch[1];
+        }
+        return { inlineData: { mimeType, data: base64 } };
       }));
       
       let systemPrompt = "";
@@ -1905,6 +2104,9 @@ const App = () => {
         } catch (e) {
           console.warn(`Model ${model.name} 批改失敗:`, e.message);
           if (stopRef.current) break; 
+          if (e.message.includes("API Key") || e.message.includes("403")) {
+            throw e;
+          }
           continue;
         }
       }
@@ -2723,25 +2925,56 @@ const App = () => {
       )}
 
       {showApiKeyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowApiKeyModal(false)}>
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl transform scale-100 animate-in zoom-in-95 duration-300 border-2 border-indigo-100" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 p-4" onClick={() => setShowApiKeyModal(false)}>
+          <div className="bg-white rounded-3xl p-7 max-w-sm w-full shadow-2xl transform scale-100 animate-in zoom-in-95 duration-300 border-2 border-indigo-100" onClick={e => e.stopPropagation()}>
             <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-50 mb-6">
-                <AlertCircle size={32} className="text-indigo-600" />
+              <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-indigo-50 mb-4 text-indigo-600">
+                <AlertCircle size={30} />
               </div>
-              <h3 className="text-2xl font-black text-slate-800 mb-2">需要 API Key</h3>
-              <p className="text-slate-600 mb-6 text-sm leading-relaxed text-left">
-                系統需要 Google Gemini API Key 才能閱讀與批改文章。<br/><br/>
-                <span className="font-bold text-rose-600">⚠️ 費用提醒：</span><br/>
-                Gemini API 目前提供一定的免費額度，但若用量大或綁定信用卡，可能會產生費用，請務必留意官方計費標準。
+              <h3 className="text-xl font-black text-slate-800 mb-1">設定 Gemini API Key</h3>
+              <p className="text-slate-500 mb-4 text-xs leading-relaxed text-left bg-slate-50 p-3 rounded-xl border border-slate-100">
+                系統需要 Google Gemini API Key 才能執行 AI 作文分析與批改。API Key 將安全保存在您的個人瀏覽器中。<br/>
+                <span className="font-bold text-amber-600">💡 提示：</span>首次使用可至 Google AI Studio 免費申請。
               </p>
+
+              <div className="mb-4 text-left">
+                <label className="text-[11px] font-bold text-slate-500 mb-1.5 block">請輸入您的 API Key：</label>
+                <input 
+                  type="password" 
+                  value={apiKey} 
+                  onChange={e => setApiKey(e.target.value)} 
+                  placeholder="AIzaSy..." 
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 font-mono"
+                />
+              </div>
               
-              <div className="grid grid-cols-1 gap-3">
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition-colors shadow-lg shadow-indigo-200 block">
-                  前往申請 API Key
+              <div className="grid grid-cols-1 gap-2.5">
+                <button 
+                  onClick={() => {
+                    if (apiKey.trim()) {
+                      setShowApiKeyModal(false);
+                      showToast("API Key 設定已儲存！");
+                    } else {
+                      showToast("請先輸入有效的 API Key", "error");
+                    }
+                  }} 
+                  className="py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-black transition-colors shadow-lg shadow-indigo-200 block text-center cursor-pointer"
+                >
+                  儲存並完成設定
+                </button>
+                <a 
+                  href="https://aistudio.google.com/app/apikey" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors block text-center"
+                >
+                  前往 Google AI Studio 申請免費 Key
                 </a>
-                <button onClick={() => setShowApiKeyModal(false)} className="py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-colors">
-                  我知道了
+                <button 
+                  onClick={() => setShowApiKeyModal(false)} 
+                  className="py-2 text-slate-400 hover:text-slate-600 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  稍後再設定
                 </button>
               </div>
             </div>

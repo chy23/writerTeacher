@@ -1,5 +1,12 @@
 [
   {
+    "version": "#d01e339",
+    "date": "2026-10-16",
+    "title": "chore: 同步更新日誌最新版本號至 #79c2b7a",
+    "details": [],
+    "isBugFix": false
+  },
+  {
     "version": "#79c2b7a",
     "date": "2026-10-16",
     "title": "修復：大幅強化 AI 回傳格式解析與容錯機制，解決批改時格式不符問題",
