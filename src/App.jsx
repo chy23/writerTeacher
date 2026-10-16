@@ -353,6 +353,232 @@ const loadScript = (src) => {
   });
 };
 
+// --- AI 評分回傳超強容錯解析器 (Robust Multi-Strategy Parser) ---
+const parseGradingResponse = (rawText, textTypeId, gradeLevel) => {
+  if (!rawText || typeof rawText !== "string") return null;
+
+  // 1. 去除 AI 思考/推理標籤 (<thought>...</thought>)
+  const text = rawText.replace(/<thought>[\s\S]*?<\/thought>/gi, "").trim();
+  if (!text) return null;
+
+  // 2. 文本類型判定 (Auto 模式)
+  const typeMatch = text.match(/##\s*文本類型判定\s*[:：]?\s*\n?\s*\[?(.*?)\]?(?:\n|$)/i) ||
+                    text.match(/文本類型[：:\s]*\[?(.*?)\]?(?:\n|$)/i);
+  const evaluatedType = typeMatch ? typeMatch[1].replace(/[\[\]]/g, "").trim() : null;
+
+  // 3. 提取 OCR 學生手寫原文
+  let ocrText = "無法獲取原文內容";
+  const ocrMarkers = [
+    /##\s*OCR\s*辨識出的原文\s*[:：]?\s*\n?/i,
+    /##\s*OCR\s*辨識原文\s*[:：]?\s*\n?/i,
+    /##\s*辨識出的原文\s*[:：]?\s*\n?/i,
+    /##\s*原文內容\s*[:：]?\s*\n?/i,
+    /【OCR\s*辨識出的原文】\s*\n?/i,
+    /【原文內容】\s*\n?/i,
+    /###\s*OCR\s*辨識出的原文\s*[:：]?\s*\n?/i
+  ];
+  for (const marker of ocrMarkers) {
+    if (marker.test(text)) {
+      const parts = text.split(marker);
+      if (parts.length > 1 && parts[1].trim()) {
+        ocrText = parts[1].trim();
+        break;
+      }
+    }
+  }
+
+  // 4. 提取文章亮點
+  let highlights = "";
+  const highlightMarkers = [
+    /##\s*文章亮點\s*[:：]?\s*\n?/i,
+    /##\s*優點與亮點\s*[:：]?\s*\n?/i,
+    /【文章亮點】\s*\n?/i,
+    /###\s*文章亮點\s*[:：]?\s*\n?/i
+  ];
+  for (const marker of highlightMarkers) {
+    if (marker.test(text)) {
+      const seg = text.split(marker)[1];
+      if (seg) {
+        highlights = seg.split(/\n(?=##|【|###)/)[0]?.replace(/\*/g, "").trim();
+        if (highlights) break;
+      }
+    }
+  }
+
+  // 5. 提取改進建議 ("這樣寫會更好")
+  let suggestions = "";
+  const suggestionMarkers = [
+    /##\s*這樣寫會更好\s*[:：]?\s*\n?/i,
+    /##\s*改善建議\s*[:：]?\s*\n?/i,
+    /【這樣寫會更好】\s*\n?/i,
+    /###\s*這樣寫會更好\s*[:：]?\s*\n?/i
+  ];
+  for (const marker of suggestionMarkers) {
+    if (marker.test(text)) {
+      const seg = text.split(marker)[1];
+      if (seg) {
+        suggestions = seg.split(/\n(?=##|【|###)/)[0]?.replace(/\*/g, "").trim();
+        if (suggestions) break;
+      }
+    }
+  }
+
+  // 6. 提取總分
+  let scoreMatch = text.match(/(?:##\s*|###\s*|【|\*\*|#)?\s*(?:總分|總成績|總計)\s*[:：]?\s*(\d+)/i) ||
+                   text.match(/得分\s*[:：]?\s*(\d+)\s*(?:[分\s]*[\/／]\s*100)?/i);
+  let parsedTotalScore = scoreMatch ? parseInt(scoreMatch[1]) : null;
+
+  // 7. 各項規準標準預設值
+  const STANDARD_CRITERIA = {
+    Bf: [
+      { label: "意象", defaultTotal: 30 },
+      { label: "形式", defaultTotal: 20 },
+      { label: "修辭", defaultTotal: 20 },
+      { label: "內容", defaultTotal: 30 }
+    ],
+    auto_science: [
+      { label: "探究與邏輯", defaultTotal: 40 },
+      { label: "證據與資料", defaultTotal: 30 },
+      { label: "表達與結構", defaultTotal: 30 }
+    ],
+    default: [
+      { label: "立意與取材", defaultTotal: 40 },
+      { label: "結構與組織", defaultTotal: 30 },
+      { label: "遣詞與造句", defaultTotal: 20 },
+      { label: "字體與格式", defaultTotal: 10 }
+    ]
+  };
+
+  const scores = [];
+  const foundLabels = new Set();
+
+  const addScore = (label, scoreNum, totalNum) => {
+    const cleanLabel = label.replace(/[\[\]【】\*\-\d\.\s#()（）:：]/g, "").trim();
+    if (!cleanLabel || cleanLabel.length < 2) return;
+    if (cleanLabel.includes("項目") || cleanLabel.includes("分數") || cleanLabel.includes("總分") || 
+        cleanLabel.includes("成績") || cleanLabel.includes("得分") || cleanLabel.includes("總計") || 
+        cleanLabel.toLowerCase().includes("total")) return;
+    if (foundLabels.has(cleanLabel)) return;
+
+    let score = parseInt(scoreNum);
+    let total = parseInt(totalNum) || 0;
+    if (isNaN(score)) return;
+
+    if (total === 0) {
+      const allStd = [...STANDARD_CRITERIA.default, ...STANDARD_CRITERIA.Bf, ...STANDARD_CRITERIA.auto_science];
+      const matchStd = allStd.find(c => cleanLabel.includes(c.label) || c.label.includes(cleanLabel));
+      if (matchStd) {
+        total = matchStd.defaultTotal;
+      } else {
+        total = textTypeId === "auto" ? (scores.length === 0 ? 40 : 30) : (scores.length === 3 ? 10 : 30);
+      }
+    }
+
+    foundLabels.add(cleanLabel);
+    scores.push({ label: cleanLabel, score, total });
+  };
+
+  // 策略 A：相容 Markdown 表格 (2欄、3欄、4欄)
+  const tableRowRegex = /\|([^|\n]+)\|([^|\n]+)(?:\|([^|\n]+))?(?:\|([^|\n]+))?\|/g;
+  let tMatch;
+  while ((tMatch = tableRowRegex.exec(text)) !== null) {
+    const col1 = tMatch[1].trim();
+    const col2 = tMatch[2].trim();
+    const col3 = tMatch[3] ? tMatch[3].trim() : "";
+    if (col1.includes("---") || col1.includes("項目") || col1.includes("規準") || col1.includes("指標")) continue;
+
+    const slashMatch2 = col2.match(/(\d+)\s*[\/／]\s*(\d+)/);
+    if (slashMatch2) {
+      addScore(col1, slashMatch2[1], slashMatch2[2]);
+      continue;
+    }
+    const slashMatch3 = col3.match(/(\d+)\s*[\/／]\s*(\d+)/);
+    if (slashMatch3) {
+      addScore(col1, slashMatch3[1], slashMatch3[2]);
+      continue;
+    }
+    const num2 = col2.match(/(\d+)/);
+    const num3 = col3.match(/(\d+)/);
+    if (num2 && num3) {
+      const val2 = parseInt(num2[1]);
+      const val3 = parseInt(num3[1]);
+      if (val2 <= val3) addScore(col1, val2, val3);
+      else addScore(col1, val3, val2);
+      continue;
+    } else if (num2) {
+      addScore(col1, num2[1], 0);
+      continue;
+    }
+  }
+
+  // 策略 B：逐行正則辨識 (相容冒號、括號、分、橫線等)
+  const lines = text.split("\n");
+  for (const line of lines) {
+    const cleanLine = line.replace(/\*/g, "").trim();
+    if (!cleanLine || cleanLine.startsWith("|")) continue;
+
+    // 格式 1: [立意與取材]: 32/40 or 立意與取材: 32/40 or 立意與取材: 32 / 40 分
+    const p1 = cleanLine.match(/^(?:[\-\d\.\s\[【(]*)([^\]】):：\n\d\-]+)(?:[\]】)\s]*)[::：\-\s]+(\d+)\s*(?:[分\s]*[\/／]\s*(\d+)[分\s]*)?/);
+    if (p1 && p1[1]) {
+      addScore(p1[1], p1[2], p1[3]);
+      continue;
+    }
+
+    // 格式 2: 立意與取材 (32/40) or 立意與取材（32/40）
+    const p2 = cleanLine.match(/([^\d\s()（）]+)\s*[（(]\s*(\d+)\s*[\/／]\s*(\d+)\s*[)）]/);
+    if (p2 && p2[1]) {
+      addScore(p2[1], p2[2], p2[3]);
+      continue;
+    }
+
+    // 格式 3: 立意與取材：得 32 分 (滿分 40)
+    const p3 = cleanLine.match(/([^\d:：\s]+)[::：\s]*(?:得分|得|為)?\s*(\d+)\s*(?:分)?\s*(?:[（(]?滿分\s*(\d+)[）)]?)?/);
+    if (p3 && p3[1]) {
+      addScore(p3[1], p3[2], p3[3]);
+      continue;
+    }
+  }
+
+  // 策略 C：若抓取到的細項不足，直接在全文搜尋常見規準關鍵字
+  if (scores.length < 2) {
+    const activeCriteria = textTypeId === "Bf" ? STANDARD_CRITERIA.Bf :
+                           (text.includes("探究") ? STANDARD_CRITERIA.auto_science : STANDARD_CRITERIA.default);
+    
+    for (const crit of activeCriteria) {
+      const regex = new RegExp(crit.label + "[^\n\\d]*?(\\d+)(?:\\s*[\\/／]\\s*(\\d+))?", "i");
+      const m = text.match(regex);
+      if (m) {
+        addScore(crit.label, m[1], m[2] || crit.defaultTotal);
+      }
+    }
+  }
+
+  // 策略 D：若完全無細項但有總分，依標準權重智慧等比例建構細項分數
+  if (scores.length === 0 && parsedTotalScore !== null && !isNaN(parsedTotalScore) && parsedTotalScore > 0) {
+    const std = textTypeId === "Bf" ? STANDARD_CRITERIA.Bf :
+                (text.includes("探究") ? STANDARD_CRITERIA.auto_science : STANDARD_CRITERIA.default);
+    const maxTotal = std.reduce((acc, c) => acc + c.defaultTotal, 0);
+    const ratio = Math.min(1, parsedTotalScore / maxTotal);
+    for (const c of std) {
+      scores.push({
+        label: c.label,
+        score: Math.round(c.defaultTotal * ratio),
+        total: c.defaultTotal
+      });
+    }
+  }
+
+  // 最終分數計算
+  let finalScore = "N/A";
+  if (parsedTotalScore !== null && !isNaN(parsedTotalScore) && parsedTotalScore > 0) {
+    finalScore = parsedTotalScore.toString();
+  } else if (scores.length > 0) {
+    finalScore = scores.reduce((acc, curr) => acc + curr.score, 0).toString();
+  }
+
+  return { scores, finalScore, highlights, suggestions, ocrText, evaluatedType };
+};
+
 const renderTextToImage = (text, title = "Document Content") => {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -1540,6 +1766,9 @@ const App = () => {
         [證據與資料]: 30/30
         [表達與結構]: 25/30
 
+        ## 總分
+        (上述三項分數加總數字)
+
         3. **綜合評語**
         【重要比例原則】：60% 具體引用 108 課綱條目（如：(6-III-2)），40% 使用白話、常見文本審閱用詞（如：流暢、破題精彩等）。
         嚴禁直接複製等級描述。
@@ -1553,9 +1782,6 @@ const App = () => {
 
         ## 這樣寫會更好
         (條列式，最多 2 點，每點不超過 30 字，結合課綱與白話評語)
-        
-        ## 總分
-        (上述三項分數加總數字)
 
         ## 文本類型判定
         [自然科學探究] 或 [社會領域探究]
@@ -1579,15 +1805,15 @@ const App = () => {
           [形式]: 10/20
           [修辭]: 10/20
           [內容]: 10/30
+
+          ## 總分
+          (上述四項分數加總數字)
           
           ## 文章亮點
           (條列式，最多 2 點，每點不超過 30 字，結合課綱與白話評語)
           
           ## 這樣寫會更好
           (條列式，最多 2 點，每點不超過 30 字，結合課綱與白話評語)
-          
-          ## 總分
-          (數字)
           
           ## OCR 辨識出的原文
           (一字不漏轉錄)`;
@@ -1616,15 +1842,15 @@ const App = () => {
           [結構與組織]: 24/30
           [遣詞與造句]: 16/20
           [字體與格式]: 9/10
+
+          ## 總分
+          (上述四項分數加總數字)
           
           ## 文章亮點
           (條列式，最多 2 點，每點不超過 30 字，結合課綱與白話評語)
           
           ## 這樣寫會更好
           (條列式，最多 2 點，每點不超過 30 字，結合課綱與白話評語)
-          
-          ## 總分
-          (數字)
           
           ## OCR 辨識出的原文
           (一字不漏轉錄)
@@ -1636,6 +1862,7 @@ const App = () => {
       let gradingResult = null;
       let usedModelName = "";
       let usedModelId = "";
+      let parsedData = null;
 
       for (const model of FALLBACK_MODEL_ORDER) {
         if (model.requireConfirmation) {
@@ -1660,87 +1887,40 @@ const App = () => {
           }
         }
         try {
-          gradingResult = await callGeminiWithRetry(model.id, payload);
+          const res = await callGeminiWithRetry(model.id, payload);
+          const rawText = res.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!rawText) throw new Error("回傳內容為空");
+
+          const parsed = parseGradingResponse(rawText, textTypeId, gradeLevel);
+          if (!parsed || (parsed.scores.length === 0 && (parsed.finalScore === "N/A" || parsed.finalScore === "0"))) {
+            console.warn(`Model ${model.name} 回傳格式未包含有效評分，自動嘗試下一位備援模型...`);
+            continue;
+          }
+
+          gradingResult = res;
           usedModelName = model.name;
           usedModelId = model.id;
+          parsedData = parsed;
           break;
         } catch (e) {
-          console.warn(`Model ${model.name} failed, trying next...`);
+          console.warn(`Model ${model.name} 批改失敗:`, e.message);
           if (stopRef.current) break; 
           continue;
         }
       }
 
-      if (!gradingResult) throw new Error("所有 AI 模型皆無法回應，請稍後再試。");
-
-      const text = gradingResult.candidates?.[0]?.content?.parts?.[0]?.text || "辨識失敗。";
-      
-      // Parse Grading Logic
-      const typeMatch = text.match(/## 文本類型判定\s*[:：]?\s*\n?\s*\[?(.*?)\]?/);
-      const evaluatedType = typeMatch ? typeMatch[1].replace(/[\[\]]/g, '') : null;
-      
-      // Extract OCR strictly
-      let ocrText = "無法獲取原文內容";
-      if (text.includes("## OCR 辨識出的原文")) {
-          ocrText = text.split("## OCR 辨識出的原文")[1]?.trim();
-      }
-      
-      const scoreMatch = text.match(/## 總分\s*[:：]?\s*(\d+)/);
-      
-      let highlights = "";
-      if (text.includes("## 文章亮點")) highlights = text.split("## 文章亮點")[1]?.split("##")[0]?.replace(/\*/g, '').trim();
-      
-      let suggestions = "";
-      if (text.includes("## 這樣寫會更好")) suggestions = text.split("## 這樣寫會更好")[1]?.split("##")[0]?.replace(/\*/g, '').trim();
-
-      const scores = [];
-      const tableMatch = text.match(/#*\s*評分表([\s\S]*?)(?=\n##|$)/);
-      const tableContent = tableMatch ? tableMatch[1] : text;
-
-      if (tableContent) {
-          const lines = tableContent.split('\n');
-          for (const line of lines) {
-              const cleanLine = line.replace(/\*/g, '').trim();
-              if (!cleanLine) continue;
-              
-              if (cleanLine.includes('|')) {
-                  const parts = cleanLine.split('|').map(p => p.trim()).filter(p => p);
-                  if (parts.length >= 2 && !cleanLine.includes('---')) {
-                      const label = parts[0].replace(/[\*\[\]\-\d\.]/g, '').trim();
-                      const scoreStr = parts[parts.length - 1];
-                      const smatch = scoreStr.match(/(\d+)(?:\s*\/\s*(\d+))?/);
-                      if (smatch && label.length >= 2 && !label.includes("項目") && !label.includes("分數") && !label.includes("總分")) {
-                          let total = smatch[2] ? parseInt(smatch[2]) : 0;
-                          if (total === 0 && textTypeId === 'auto') total = scores.length === 0 ? 40 : 30;
-                          scores.push({ label, score: parseInt(smatch[1]), total });
-                      }
-                  }
-                  continue;
-              }
-
-              const match = cleanLine.match(/^(?:[\-\d\.\s\[【]*)([^\]】:：\n]+)(?:[\]】\s]*)[::：]\s*(\d+)(?:\s*\/\s*(\d+))?/);
-              
-              if (match) {
-                  const label = match[1].trim();
-                  if (label.length < 2 || label.includes("評分") || label.includes("總分") || label.toLowerCase().includes("total")) continue;
-                  
-                  const score = parseInt(match[2]);
-                  let total = match[3] ? parseInt(match[3]) : 0;
-                  
-                  if (total === 0 && textTypeId === 'auto') {
-                      total = scores.length === 0 ? 40 : 30;
-                  }
-                  scores.push({ label, score, total });
-              }
-          }
+      if (!gradingResult || !parsedData) {
+        throw new Error("所有 AI 模型皆無法正常解析此作文，請確認照片是否清晰並點擊重試。");
       }
 
-      if (scores.length === 0) throw new Error("AI 回傳格式不符，無法讀取分數與評語 (請重試)");
-
-      let finalScore = scoreMatch ? scoreMatch[1] : "N/A";
-      if ((finalScore === "N/A" || isNaN(parseInt(finalScore))) && scores.length > 0) {
-          finalScore = scores.reduce((acc, curr) => acc + curr.score, 0).toString();
-      }
+      const {
+        scores,
+        finalScore,
+        highlights,
+        suggestions,
+        ocrText,
+        evaluatedType
+      } = parsedData;
 
       // Step 2: Originality Check (Independent Call)
       let originalityData = null;
