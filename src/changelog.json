@@ -1,6 +1,6 @@
 [
   {
-    "version": "#4138631",
+    "version": "#527c7d9",
     "date": "2026-11-19",
     "title": "Feat: 更新 API 模型調用順序為 Gemini 4 旗艦系列並強制調用前詢問",
     "details": [],
