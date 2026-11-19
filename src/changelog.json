@@ -1,5 +1,19 @@
 [
   {
+    "version": "#4138631",
+    "date": "2026-11-19",
+    "title": "Feat: 更新 API 模型調用順序為 Gemini 4 旗艦系列並強制調用前詢問",
+    "details": [],
+    "isBugFix": false
+  },
+  {
+    "version": "#c746eca",
+    "date": "2026-10-16",
+    "title": "chore: 同步更新繁體中文更新紀錄版本 (c34ce8d)",
+    "details": [],
+    "isBugFix": false
+  },
+  {
     "version": "#c34ce8d",
     "date": "2026-10-16",
     "title": "修復：杜絕「符應/展現/請落實/依據」誤判向度，解決評分解析與 API Key 遺失問題",

@@ -97,11 +97,11 @@ const TEXT_TYPES = [
 ];
 
 const FALLBACK_MODEL_ORDER = [
-  { id: 'gemini-3.8-flash', name: 'Gemini-3.8-Flash' },
-  { id: 'gemini-3.7-flash', name: 'Gemini-3.7-Flash' },
-  { id: 'gemini-3.6-flash', name: 'Gemini-3.6-Flash' },
+  { id: 'gemini-3.8-flash', name: 'Gemini-3.8-Flash', requireConfirmation: false },
+  { id: 'gemini-4-hydrogen', name: 'Gemini-4-Hydrogen', requireConfirmation: true },
   { id: 'gemini-4-argon', name: 'Gemini-4-Argon', requireConfirmation: true },
-  { id: 'gemini-3.1-pro-preview', name: 'Gemini-3.1-Pro' },
+  { id: 'gemini-4-neon', name: 'Gemini-4-Neon', requireConfirmation: true },
+  { id: 'gemini-4-carbon', name: 'Gemini-4-Carbon', requireConfirmation: true },
 ];
 
 // Originality System Prompt from User
